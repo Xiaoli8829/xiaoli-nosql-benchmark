@@ -6,6 +6,7 @@ using Amazon.DynamoDBv2.Model;
 using Amazon.Lambda.Core;
 using Amazon.SimpleNotificationService;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using JsonConvert = Newtonsoft.Json.JsonConvert;
@@ -16,11 +17,14 @@ namespace WorkloadGenerator
 {
     public class Function
     {
-        public static IConfiguration Configuration { get; private set; }
+        private ILambdaConfiguration LambdaConfiguration { get; }
 
-        public Function(IConfiguration configuration)
+        public Function()
         {
-            Configuration = configuration;
+            var serviceCollection = new ServiceCollection();
+            ConfigureServices(serviceCollection);
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+            LambdaConfiguration = serviceProvider.GetService<ILambdaConfiguration>();
         }
 
         public async Task FunctionHandler(Configuration config, ILambdaContext context)
@@ -96,8 +100,14 @@ namespace WorkloadGenerator
                 Update = 0.5
             };
 
-            var snsClient = new AmazonSimpleNotificationServiceClient(Configuration["AWSAccessKey"], Configuration["AWSAccessSecret"]);
+            
+            var snsClient = new AmazonSimpleNotificationServiceClient(LambdaConfiguration.Configuration["AWSAccessKey"], LambdaConfiguration.Configuration["AWSAccessSecret"]);
             await snsClient.PublishAsync("arn:aws:sns:eu-west-1:341490012980:sns-workload-topic", JsonConvert.SerializeObject(workload)).ConfigureAwait(false);
+        }
+
+        private void ConfigureServices(IServiceCollection serviceCollection)
+        {
+            serviceCollection.AddTransient<ILambdaConfiguration, LambdaConfiguration>();
         }
     }
 }

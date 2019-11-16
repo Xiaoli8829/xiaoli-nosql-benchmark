@@ -35,3 +35,5 @@ WorkloadExecutorDynamoDB/obj/Debug/netcoreapp2.1/WorkloadExecutorDynamoDB.Assemb
 TwitterStreamPublisher/obj/Debug/netcoreapp2.1/TwitterStreamPublisher.AssemblyInfo.cs
 TwitterStreamConsumerDynamoDB/obj/Debug/netcoreapp2.1/TwitterStreamConsumerDynamoDB.AssemblyInfo.cs
 TwitterStreamConsumerMongoDB/obj/Debug/netcoreapp2.1/TwitterStreamConsumerMongoDB.AssemblyInfo.cs
+/WorkloadGenerator/bin/Release/netcoreapp2.1
+/WorkloadGenerator/obj/MCD/Release/netcoreapp2.1/rhel.7.2-x64
