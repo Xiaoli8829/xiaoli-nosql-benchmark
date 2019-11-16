@@ -41,7 +41,15 @@ namespace WorkloadGenerator
 
             //Send to SQS Queue
             var toBeSentIds = commonItemIds.Take(config.Count).ToList();
-            await SendToSns(toBeSentIds).ConfigureAwait(false);
+
+            var workload = new Workload
+            {
+                Ids = toBeSentIds,
+                Read = config.Read,
+                Update = config.Update
+            };
+
+            await SendToSns(workload).ConfigureAwait(false);
         }
 
         private async Task<List<string>> ScanDynamoDBItemIds()
@@ -91,16 +99,8 @@ namespace WorkloadGenerator
             return result;
         }
 
-        private async Task SendToSns(List<string> ItemIds)
-        {
-            var workload = new Workload
-            {
-                Ids = ItemIds,
-                Read = 0.5,
-                Update = 0.5
-            };
-
-            
+        private async Task SendToSns(Workload workload)
+        {           
             var snsClient = new AmazonSimpleNotificationServiceClient(LambdaConfiguration.Configuration["AWSAccessKey"], LambdaConfiguration.Configuration["AWSAccessSecret"]);
             await snsClient.PublishAsync("arn:aws:sns:eu-west-1:341490012980:sns-workload-topic", JsonConvert.SerializeObject(workload)).ConfigureAwait(false);
         }
