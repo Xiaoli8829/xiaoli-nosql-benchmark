@@ -35,3 +35,15 @@ WorkloadExecutorDynamoDB/obj/Debug/netcoreapp2.1/WorkloadExecutorDynamoDB.Assemb
 TwitterStreamPublisher/obj/Debug/netcoreapp2.1/TwitterStreamPublisher.AssemblyInfo.cs
 TwitterStreamConsumerDynamoDB/obj/Debug/netcoreapp2.1/TwitterStreamConsumerDynamoDB.AssemblyInfo.cs
 TwitterStreamConsumerMongoDB/obj/Debug/netcoreapp2.1/TwitterStreamConsumerMongoDB.AssemblyInfo.cs
+/WorkloadGenerator/bin/Release/netcoreapp2.1
+/WorkloadGenerator/obj/MCD/Release/netcoreapp2.1/rhel.7.2-x64
+/TwitterStreamConsumerDynamoDB/bin/Release/netcoreapp2.1
+/TwitterStreamConsumerDynamoDB/obj/MCD/Release/netcoreapp2.1/rhel.7.2-x64
+/TwitterStreamConsumerMongoDB/bin/Release/netcoreapp2.1
+/TwitterStreamConsumerMongoDB/obj/MCD/Release/netcoreapp2.1/rhel.7.2-x64
+/TwitterStreamPublisher/bin/Release/netcoreapp2.1
+/TwitterStreamPublisher/obj/MCD/Release/netcoreapp2.1/rhel.7.2-x64
+/WorkloadExecutorDynamoDB/bin/Release/netcoreapp2.1
+/WorkloadExecutorDynamoDB/obj/MCD/Release/netcoreapp2.1/rhel.7.2-x64
+/WorkloadExecutorMongoDB/bin/Release/netcoreapp2.1
+/WorkloadExecutorMongoDB/obj/MCD/Release/netcoreapp2.1/rhel.7.2-x64

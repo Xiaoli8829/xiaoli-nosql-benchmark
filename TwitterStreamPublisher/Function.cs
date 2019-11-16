@@ -5,6 +5,7 @@ using Amazon.Kinesis;
 using Amazon.Kinesis.Model;
 using Amazon.Lambda.Core;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Tweetinvi;
 using Stream = Tweetinvi.Stream;
 
@@ -14,21 +15,24 @@ namespace TwitterStreamPublisher
 {
     public class Function
     {
-        public static IConfiguration Configuration { get; private set; }
+        private ILambdaConfiguration LambdaConfiguration { get; }
 
-        public Function(IConfiguration configuration)
+        public Function()
         {
-            Configuration = configuration;
+            var serviceCollection = new ServiceCollection();
+            ConfigureServices(serviceCollection);
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+            LambdaConfiguration = serviceProvider.GetService<ILambdaConfiguration>();
         }
 
         public async Task FunctionHandler(State state, ILambdaContext context)
         {
             
             Auth.SetUserCredentials(
-                Configuration["TwitterConsumerKey"],
-                Configuration["TwitterConsumerSecret"],
-                Configuration["TwitterUserAccessToken"],
-                Configuration["TwitterUserAccessSecret"]
+                LambdaConfiguration.Configuration["TwitterConsumerKey"],
+                LambdaConfiguration.Configuration["TwitterConsumerSecret"],
+                LambdaConfiguration.Configuration["TwitterUserAccessToken"],
+                LambdaConfiguration.Configuration["TwitterUserAccessSecret"]
             );
 
             // Using the sample stream
@@ -80,8 +84,8 @@ namespace TwitterStreamPublisher
         private async Task StreamToKinisis(string json)
         {
             var amazonKinesisClient =
-                new AmazonKinesisClient(Configuration["AWSAccessKey"],
-                    Configuration["AWSAccessSecret"], 
+                new AmazonKinesisClient(LambdaConfiguration.Configuration["AWSAccessKey"],
+                    LambdaConfiguration.Configuration["AWSAccessSecret"], 
                     RegionEndpoint.EUWest1);
 
             await amazonKinesisClient.PutRecordAsync(new PutRecordRequest
@@ -101,6 +105,11 @@ namespace TwitterStreamPublisher
             writer.Flush();
             stream.Position = 0;
             return stream;
+        }
+
+        private void ConfigureServices(IServiceCollection serviceCollection)
+        {
+            serviceCollection.AddTransient<ILambdaConfiguration, LambdaConfiguration>();
         }
     }
 }
