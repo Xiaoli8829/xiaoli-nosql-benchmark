@@ -47,3 +47,4 @@ TwitterStreamConsumerMongoDB/obj/Debug/netcoreapp2.1/TwitterStreamConsumerMongoD
 /WorkloadExecutorDynamoDB/obj/MCD/Release/netcoreapp2.1/rhel.7.2-x64
 /WorkloadExecutorMongoDB/bin/Release/netcoreapp2.1
 /WorkloadExecutorMongoDB/obj/MCD/Release/netcoreapp2.1/rhel.7.2-x64
+/.vs/XiaoliNosqlBenchmark/DesignTimeBuild
