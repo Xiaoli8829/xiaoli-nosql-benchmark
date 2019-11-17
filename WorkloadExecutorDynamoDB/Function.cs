@@ -32,18 +32,46 @@ namespace WorkloadExecutorDynamoDB
                 var readWorkload = workload.Ids.Take(readworkloadcount).ToList();
                 var updateWorkload = workload.Ids.Take(updateworkloadcount).ToList();
 
-                var readWorkloadExecutionTime = await ExecuteReadWorkload(readWorkload, context).ConfigureAwait(false);
+                var readWorkloadExecutionTimeList = await ExecuteReadWorkload(readWorkload, context).ConfigureAwait(false);
 
-                var udpateWorkloadExecutionTime =
-                    await ExecuteUpdateWorkload(updateWorkload, context).ConfigureAwait(false);
+                var udpateWorkloadExecutionTimeList = await ExecuteUpdateWorkload(updateWorkload, context).ConfigureAwait(false);
 
-                context.Logger.LogLine($"[Summary] Total {workload.Ids.Count} read&update workload, Read takes {readWorkloadExecutionTime} ms, Update takes {udpateWorkloadExecutionTime} ms");
+                //context.Logger.LogLine($"[Summary] Total {workload.Ids.Count} read&update workload, Read takes {readWorkloadExecutionTime} ms, Update takes {udpateWorkloadExecutionTime} ms");
+
+
+                var maxReadLatency = readWorkloadExecutionTimeList.Max();
+                var minReadLatency = readWorkloadExecutionTimeList.Min();
+                var averageReadLatency = readWorkloadExecutionTimeList.Average();
+
+                var maxUpdateLatency = udpateWorkloadExecutionTimeList.Max();
+                var minUpdateLatency = udpateWorkloadExecutionTimeList.Min();
+                var averageUpdateLatency = udpateWorkloadExecutionTimeList.Average();
+
+                string readWorkloadReport = $"Read Workload Report \r\n" +
+                                            $"[Read] Operation {readWorkload.Count} \r\n" +
+                                            $"[Read] AverageLatency(ms) {averageReadLatency} \r\n" +
+                                            $"[Read] MinLatency(ms) {minReadLatency} \r\n" +
+                                            $"[Read] MaxLatency(ms) {maxReadLatency} \r\n" +
+                                            $"[Read] 95thPercentileLatency(ms) {Percentile(readWorkloadExecutionTimeList.ToArray(), 0.95)} \r\n" +
+                                            $"[Read] 99thPercentileLatency(ms)  {Percentile(readWorkloadExecutionTimeList.ToArray(), 0.99)} \r\n";
+
+                string udpateWorkloadReport = $"Update Worload Report \r\n" +
+                                            $"[Update] Operation {updateWorkload.Count} \r\n" +
+                                            $"[Update] AverageLatency(ms) {averageUpdateLatency} \r\n" +
+                                            $"[Update] MinLatency(ms) {minUpdateLatency} \r\n" +
+                                            $"[Update] MaxLatency(ms) {maxUpdateLatency} \r\n" +
+                                            $"[Update] 95thPercentileLatency(ms) {Percentile(udpateWorkloadExecutionTimeList.ToArray(), 0.95)} \r\n" +
+                                            $"[Update] 99thPercentileLatency(ms)  {Percentile(udpateWorkloadExecutionTimeList.ToArray(), 0.99)} \r\n";
+
+                context.Logger.LogLine(readWorkloadReport);
+
+                context.Logger.LogLine(udpateWorkloadReport);
             }            
         }
 
-        private async Task<long> ExecuteReadWorkload(List<string> ids, ILambdaContext context)
+        private async Task<List<double>> ExecuteReadWorkload(List<string> ids, ILambdaContext context)
         {
-            long totalReadTime = 0;
+            List<double> readTimeList = new List<double>();
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
             ddbConfig.ServiceURL = "http://34.246.18.10:8000";
@@ -62,16 +90,16 @@ namespace WorkloadExecutorDynamoDB
                 var responseResult = await dynamoDbContext.LoadAsync<TwitterStreamModel>(id).ConfigureAwait(false);
                 swQuery.Stop();
 
-                totalReadTime += swQuery.ElapsedMilliseconds;
-                context.Logger.LogLine($"[Query Workload] id {id} takes {swQuery.ElapsedMilliseconds} ms");
+                readTimeList.Add(swQuery.Elapsed.Milliseconds);
+                //context.Logger.LogLine($"[Query Workload] id {id} takes {queryTimeNs} ms");
             }
 
-            return totalReadTime;
+            return readTimeList;
         }
 
-        private async Task<long> ExecuteUpdateWorkload(List<string> ids, ILambdaContext context)
+        private async Task<List<double>> ExecuteUpdateWorkload(List<string> ids, ILambdaContext context)
         {
-            long totalUpdateTime = 0;
+            List<double> updateTimeList = new List<double>();
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
             ddbConfig.ServiceURL = "http://34.246.18.10:8000";
@@ -92,12 +120,31 @@ namespace WorkloadExecutorDynamoDB
                 var swUpdate = Stopwatch.StartNew();
                 await dynamoDbContext.SaveAsync(responseResult).ConfigureAwait(false);
                 swUpdate.Stop();
-                totalUpdateTime += swUpdate.ElapsedMilliseconds;
-                context.Logger.LogLine($"[Update Workload] id {id} takes {swUpdate.ElapsedMilliseconds} ms");
+
+                updateTimeList.Add(swUpdate.Elapsed.Milliseconds);
+                //context.Logger.LogLine($"[Update Workload] id {id} takes {swUpdate.ElapsedMilliseconds} ms");
 
             }
 
-            return totalUpdateTime;
+            return updateTimeList;
         }
+
+
+        private double Percentile(double[] sequence, double excelPercentile)
+        {
+            Array.Sort(sequence);
+            int N = sequence.Length;
+            double n = (N - 1) * excelPercentile + 1;
+            // Another method: double n = (N + 1) * excelPercentile;
+            if (n == 1d) return sequence[0];
+            else if (n == N) return sequence[N - 1];
+            else
+            {
+                int k = (int)n;
+                double d = n - k;
+                return sequence[k - 1] + d * (sequence[k] - sequence[k - 1]);
+            }
+        }
+
     }
 }
