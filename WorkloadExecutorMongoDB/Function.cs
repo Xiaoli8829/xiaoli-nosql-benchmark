@@ -29,40 +29,52 @@ namespace WorkloadExecutorMongoDB
                 int readworkloadcount = (int) (count * workload.Read);
                 int updateworkloadcount = (int) (count * workload.Update);
 
-                var readWorkload = workload.Ids.Take(readworkloadcount).ToList();
-                var updateWorkload = workload.Ids.Take(updateworkloadcount).ToList();
+                //Read Workload Operations
+                if (readworkloadcount > 0)
+                {
+                    var readWorkload = workload.Ids.Take(readworkloadcount).ToList();
+                    var readWorkloadExecutionTimeList = await ExecuteReadWorkload(readWorkload, context).ConfigureAwait(false);
 
-                var readWorkloadExecutionTimeList = await ExecuteReadWorkload(readWorkload, context).ConfigureAwait(false);
+                    var maxReadLatency = readWorkloadExecutionTimeList.Max();
+                    var minReadLatency = readWorkloadExecutionTimeList.Min();
+                    var averageReadLatency = readWorkloadExecutionTimeList.Average();
 
-                var udpateWorkloadExecutionTimeList = await ExecuteUpdateWorkload(updateWorkload, context).ConfigureAwait(false);
+                    string readWorkloadReport = $"Read Workload Report \r\n" +
+                                                $"[Read] Operation {readWorkload.Count} \r\n" +
+                                                $"[Read] AverageLatency(ms) {averageReadLatency} \r\n" +
+                                                $"[Read] MinLatency(ms) {minReadLatency} \r\n" +
+                                                $"[Read] MaxLatency(ms) {maxReadLatency} \r\n" +
+                                                $"[Read] 95thPercentileLatency(ms) {Percentile(readWorkloadExecutionTimeList.ToArray(), 0.95)} \r\n" +
+                                                $"[Read] 99thPercentileLatency(ms)  {Percentile(readWorkloadExecutionTimeList.ToArray(), 0.99)} \r\n";
 
-                var maxReadLatency = readWorkloadExecutionTimeList.Max();
-                var minReadLatency = readWorkloadExecutionTimeList.Min();
-                var averageReadLatency = readWorkloadExecutionTimeList.Average();
+                    context.Logger.LogLine(readWorkloadReport);
+                }
 
-                var maxUpdateLatency = udpateWorkloadExecutionTimeList.Max();
-                var minUpdateLatency = udpateWorkloadExecutionTimeList.Min();
-                var averageUpdateLatency = udpateWorkloadExecutionTimeList.Average();
 
-                string readWorkloadReport = $"Read Workload Report \r\n" +
-                                            $"[Read] Operation {readWorkload.Count} \r\n" +
-                                            $"[Read] AverageLatency(ms) {averageReadLatency} \r\n" +
-                                            $"[Read] MinLatency(ms) {minReadLatency} \r\n" +
-                                            $"[Read] MaxLatency(ms) {maxReadLatency} \r\n" +
-                                            $"[Read] 95thPercentileLatency(ms) {Percentile(readWorkloadExecutionTimeList.ToArray(), 0.95)} \r\n" +
-                                            $"[Read] 99thPercentileLatency(ms)  {Percentile(readWorkloadExecutionTimeList.ToArray(), 0.99)} \r\n";
 
-                string udpateWorkloadReport = $"Update Worload Report \r\n" +
-                                              $"[Update] Operation {updateWorkload.Count} \r\n" +
-                                              $"[Update] AverageLatency(ms) {averageUpdateLatency} \r\n" +
-                                              $"[Update] MinLatency(ms) {minUpdateLatency} \r\n" +
-                                              $"[Update] MaxLatency(ms) {maxUpdateLatency} \r\n" +
-                                              $"[Update] 95thPercentileLatency(ms) {Percentile(udpateWorkloadExecutionTimeList.ToArray(), 0.95)} \r\n" +
-                                              $"[Update] 99thPercentileLatency(ms)  {Percentile(udpateWorkloadExecutionTimeList.ToArray(), 0.99)} \r\n";
+                //Update Workload Operations
+                if (updateworkloadcount > 0)
+                {
+                    var updateWorkload = workload.Ids.Take(updateworkloadcount).ToList();
+                    var udpateWorkloadExecutionTimeList =
+                        await ExecuteUpdateWorkload(updateWorkload, context).ConfigureAwait(false);
 
-                context.Logger.LogLine(readWorkloadReport);
+                    var maxUpdateLatency = udpateWorkloadExecutionTimeList.Max();
+                    var minUpdateLatency = udpateWorkloadExecutionTimeList.Min();
+                    var averageUpdateLatency = udpateWorkloadExecutionTimeList.Average();
 
-                context.Logger.LogLine(udpateWorkloadReport);
+
+
+                    string udpateWorkloadReport = $"Update Worload Report \r\n" +
+                                                  $"[Update] Operation {updateWorkload.Count} \r\n" +
+                                                  $"[Update] AverageLatency(ms) {averageUpdateLatency} \r\n" +
+                                                  $"[Update] MinLatency(ms) {minUpdateLatency} \r\n" +
+                                                  $"[Update] MaxLatency(ms) {maxUpdateLatency} \r\n" +
+                                                  $"[Update] 95thPercentileLatency(ms) {Percentile(udpateWorkloadExecutionTimeList.ToArray(), 0.95)} \r\n" +
+                                                  $"[Update] 99thPercentileLatency(ms)  {Percentile(udpateWorkloadExecutionTimeList.ToArray(), 0.99)} \r\n";
+
+                    context.Logger.LogLine(udpateWorkloadReport);
+                }
             }
 
         }
