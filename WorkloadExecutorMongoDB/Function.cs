@@ -23,11 +23,12 @@ namespace WorkloadExecutorMongoDB
             {
                 var workload = JsonConvert.DeserializeObject<Workload>(record.Body);
 
-                context.Logger.LogLine($"Workload Read: {workload.Read} Update: {workload.Update}");
+                context.Logger.LogLine($"Workload Read: {workload.Read} Update: {workload.Update} Insert: {workload.Insert}");
 
                 int count = workload.Ids.Count;
                 int readworkloadcount = (int) (count * workload.Read);
                 int updateworkloadcount = (int) (count * workload.Update);
+                int insertworkloadcount = (int) (count * workload.Insert);
 
                 //Read Workload Operations
                 if (readworkloadcount > 0)
@@ -74,6 +75,30 @@ namespace WorkloadExecutorMongoDB
                                                   $"[Update] 99thPercentileLatency(ms)  {Percentile(udpateWorkloadExecutionTimeList.ToArray(), 0.99)} \r\n";
 
                     context.Logger.LogLine(udpateWorkloadReport);
+                }
+
+                //Insert Workload Operations
+                if (insertworkloadcount > 0)
+                {
+                    var insertWorkload = workload.Ids.Take(insertworkloadcount).ToList();
+                    var insertWorkloadExecutionTimeList =
+                        await ExecuteInsertWorkload(insertWorkload, context).ConfigureAwait(false);
+
+                    var maxInsertLatency = insertWorkloadExecutionTimeList.Max();
+                    var minInsertLatency = insertWorkloadExecutionTimeList.Min();
+                    var averageInsertLatency = insertWorkloadExecutionTimeList.Average();
+
+
+
+                    string insertWorkloadReport = $"Insert Worload Report \r\n" +
+                                                  $"[Insert] Operation {insertWorkload.Count} \r\n" +
+                                                  $"[Insert] AverageLatency(ms) {averageInsertLatency} \r\n" +
+                                                  $"[Insert] MinLatency(ms) {minInsertLatency} \r\n" +
+                                                  $"[Insert] MaxLatency(ms) {maxInsertLatency} \r\n" +
+                                                  $"[Insert] 95thPercentileLatency(ms) {Percentile(insertWorkloadExecutionTimeList.ToArray(), 0.95)} \r\n" +
+                                                  $"[Insert] 99thPercentileLatency(ms)  {Percentile(insertWorkloadExecutionTimeList.ToArray(), 0.99)} \r\n";
+
+                    context.Logger.LogLine(insertWorkloadReport);
                 }
             }
 
@@ -129,6 +154,53 @@ namespace WorkloadExecutorMongoDB
             }
 
             return updateTimeList;
+        }
+
+        private async Task<List<double>> ExecuteInsertWorkload(List<string> ids, ILambdaContext context)
+        {
+            List<double> insertTimeList = new List<double>();
+
+            var client = new MongoClient(
+                "mongodb://34.246.18.10:27017"
+            );
+            var database = client.GetDatabase("twitter");
+            var collection = database.GetCollection<BsonDocument>("stream-insert");
+
+            //Query List of BsonDocument by Ids
+            var bsonDocuments = await QueryTwitterStream(ids, context).ConfigureAwait(false);
+
+
+            foreach (var document in bsonDocuments)
+            {
+                //Insert
+                var swInsert = Stopwatch.StartNew();
+                await collection.InsertOneAsync(document).ConfigureAwait(false);
+                swInsert.Stop();
+
+                insertTimeList.Add(swInsert.Elapsed.Milliseconds);
+            }
+
+            return insertTimeList;
+        }
+
+        private async Task<List<BsonDocument>> QueryTwitterStream(List<string> ids, ILambdaContext context)
+        {
+            var result = new List<BsonDocument>();
+
+            var client = new MongoClient(
+                "mongodb://34.246.18.10:27017"
+            );
+            var database = client.GetDatabase("twitter");
+            var collection = database.GetCollection<BsonDocument>("stream");
+
+            foreach (var id in ids)
+            {
+                var filter = new BsonDocument("id_str", id);
+                var response = await collection.FindAsync(new BsonDocumentFilterDefinition<BsonDocument>(filter)).ConfigureAwait(false);              
+                result.Add(response.First());
+            }
+
+            return result;
         }
 
 

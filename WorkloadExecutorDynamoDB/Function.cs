@@ -23,11 +23,12 @@ namespace WorkloadExecutorDynamoDB
             {
                 var workload = JsonConvert.DeserializeObject<Workload>(record.Body);
 
-                context.Logger.LogLine($"Workload Read: {workload.Read} Update: {workload.Update}");
+                context.Logger.LogLine($"Workload Read: {workload.Read} Update: {workload.Update} Insert: {workload.Insert}");
 
                 int count = workload.Ids.Count;
                 int readworkloadcount = (int)(count * workload.Read);
                 int updateworkloadcount = (int)(count * workload.Update);
+                int insertworkloadcount = (int) (count * workload.Insert);
 
                 //Read Workload Operations
                 if (readworkloadcount > 0)
@@ -50,8 +51,6 @@ namespace WorkloadExecutorDynamoDB
                     context.Logger.LogLine(readWorkloadReport);
                 }
                 
-
-
                 //Update Workload Operations
                 if (updateworkloadcount > 0)
                 {
@@ -74,6 +73,30 @@ namespace WorkloadExecutorDynamoDB
                                                   $"[Update] 99thPercentileLatency(ms)  {Percentile(udpateWorkloadExecutionTimeList.ToArray(), 0.99)} \r\n";
 
                     context.Logger.LogLine(udpateWorkloadReport);
+                }
+
+                //Insert Workload Operations
+                if (insertworkloadcount > 0)
+                {
+                    var insertWorkload = workload.Ids.Take(insertworkloadcount).ToList();
+                    var insertWorkloadExecutionTimeList =
+                        await ExecuteInsertWorkload(insertWorkload, context).ConfigureAwait(false);
+
+                    var maxInsertLatency = insertWorkloadExecutionTimeList.Max();
+                    var minInsertLatency = insertWorkloadExecutionTimeList.Min();
+                    var averageInsertLatency = insertWorkloadExecutionTimeList.Average();
+
+
+
+                    string insertWorkloadReport = $"Insert Worload Report \r\n" +
+                                                  $"[Insert] Operation {insertWorkload.Count} \r\n" +
+                                                  $"[Insert] AverageLatency(ms) {averageInsertLatency} \r\n" +
+                                                  $"[Insert] MinLatency(ms) {minInsertLatency} \r\n" +
+                                                  $"[Insert] MaxLatency(ms) {maxInsertLatency} \r\n" +
+                                                  $"[Insert] 95thPercentileLatency(ms) {Percentile(insertWorkloadExecutionTimeList.ToArray(), 0.95)} \r\n" +
+                                                  $"[Insert] 99thPercentileLatency(ms)  {Percentile(insertWorkloadExecutionTimeList.ToArray(), 0.99)} \r\n";
+
+                    context.Logger.LogLine(insertWorkloadReport);
                 }
             }            
         }
@@ -136,6 +159,63 @@ namespace WorkloadExecutorDynamoDB
             }
 
             return updateTimeList;
+        }
+
+        private async Task<List<double>> ExecuteInsertWorkload(List<string> ids, ILambdaContext context)
+        {
+            List<double> insertTimeList = new List<double>();
+
+            //Prepare Data Model for Insert
+            var twitterModels = await QueryTwitterStreamData(ids, context).ConfigureAwait(false);
+
+            AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
+            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+
+            AmazonDynamoDBClient amazonDynamoDbClient =
+                new AmazonDynamoDBClient(ddbConfig);
+
+
+            string tableName = "twitter-stream-data-insert";            
+
+            foreach (var twitterStreamModel in twitterModels)
+            {
+                var sw = Stopwatch.StartNew();
+                IDynamoDBContext dynamoDbContext = new DynamoDBContext(amazonDynamoDbClient);
+                var dynamoDbBatch = dynamoDbContext.CreateBatchWrite<TwitterStreamModel>(new DynamoDBOperationConfig
+                {
+                    OverrideTableName = tableName
+                });
+                dynamoDbBatch.AddPutItem(twitterStreamModel);
+                
+                await dynamoDbBatch.ExecuteAsync().ConfigureAwait(false);
+                sw.Stop();
+                insertTimeList.Add(sw.Elapsed.Milliseconds);
+            }
+
+            return insertTimeList;
+        }
+
+        private async Task<List<TwitterStreamModel>> QueryTwitterStreamData(List<string> ids, ILambdaContext context)
+        {
+            List<TwitterStreamModel> twitterStreamModels = new List<TwitterStreamModel>();
+
+            AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
+            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+
+            AmazonDynamoDBClient amazonDynamoDbClient =
+                new AmazonDynamoDBClient(ddbConfig);
+
+
+            string tableName = "twitter-stream-data";
+            IDynamoDBContext dynamoDbContext = new DynamoDBContext(amazonDynamoDbClient);
+
+            foreach (var id in ids)
+            {
+                var responseResult = await dynamoDbContext.LoadAsync<TwitterStreamModel>(id).ConfigureAwait(false);
+                twitterStreamModels.Add(responseResult);
+            }
+
+            return twitterStreamModels;
         }
 
 
