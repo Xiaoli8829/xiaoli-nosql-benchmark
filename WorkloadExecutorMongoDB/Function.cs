@@ -163,8 +163,8 @@ namespace WorkloadExecutorMongoDB
             var client = new MongoClient(
                 "mongodb://34.246.18.10:27017"
             );
-            var database = client.GetDatabase("twitter");
-            var collection = database.GetCollection<BsonDocument>("stream-insert");
+            var database = client.GetDatabase("twitter-insert");
+            var collection = database.GetCollection<BsonDocument>("stream");
 
             //Query List of BsonDocument by Ids
             var bsonDocuments = await QueryTwitterStream(ids, context).ConfigureAwait(false);
@@ -172,12 +172,20 @@ namespace WorkloadExecutorMongoDB
 
             foreach (var document in bsonDocuments)
             {
-                //Insert
-                var swInsert = Stopwatch.StartNew();
-                await collection.InsertOneAsync(document).ConfigureAwait(false);
-                swInsert.Stop();
+                try
+                {
+                    //Insert
+                    var swInsert = Stopwatch.StartNew();
+                    await collection.InsertOneAsync(document).ConfigureAwait(false);
+                    swInsert.Stop();
 
-                insertTimeList.Add(swInsert.Elapsed.Milliseconds);
+                    insertTimeList.Add(swInsert.Elapsed.Milliseconds);
+                }
+                catch (Exception e)
+                {
+                    context.Logger.LogLine($"Error: {e.Message} Trace {e.StackTrace}");
+                }
+                
             }
 
             return insertTimeList;
