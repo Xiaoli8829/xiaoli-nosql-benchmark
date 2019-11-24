@@ -46,7 +46,8 @@ namespace WorkloadGenerator
             {
                 Ids = toBeSentIds,
                 Read = config.Read,
-                Update = config.Update
+                Update = config.Update,
+                Insert = config.Insert
             };
 
             await SendToSns(workload).ConfigureAwait(false);

@@ -8,6 +8,8 @@ namespace WorkloadGenerator
 
         public double Update { get; set; }
 
+        public double Insert { get; set; }
+
         public List<string> Ids { get; set; }
     }
 }
