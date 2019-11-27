@@ -123,8 +123,7 @@ namespace WorkloadExecutorMongoDB
                 var result = await collection.FindAsync(new BsonDocumentFilterDefinition<BsonDocument>(filter)).ConfigureAwait(false);
                 swRead.Stop();
 
-                readTimeList.Add(swRead.Elapsed.Milliseconds);
-                //context.Logger.LogLine($"[Read] id {id} takes {swRead.ElapsedMilliseconds} ms");
+                readTimeList.Add(swRead.Elapsed.TotalMilliseconds);
             }
 
             return readTimeList;
@@ -149,8 +148,7 @@ namespace WorkloadExecutorMongoDB
                 await collection.UpdateOneAsync(filter, update).ConfigureAwait(false);
                 swUpdate.Stop();
 
-                updateTimeList.Add(swUpdate.Elapsed.Milliseconds);
-                //context.Logger.LogLine($"[Update] id {id} takes {swUpdate.ElapsedMilliseconds} ms");
+                updateTimeList.Add(swUpdate.Elapsed.TotalMilliseconds);
             }
 
             return updateTimeList;
@@ -163,8 +161,8 @@ namespace WorkloadExecutorMongoDB
             var client = new MongoClient(
                 "mongodb://34.246.18.10:27017"
             );
-            var database = client.GetDatabase("twitter");
-            var collection = database.GetCollection<BsonDocument>("stream-insert");
+            var database = client.GetDatabase("twitter-insert");
+            var collection = database.GetCollection<BsonDocument>("stream");
 
             //Query List of BsonDocument by Ids
             var bsonDocuments = await QueryTwitterStream(ids, context).ConfigureAwait(false);
@@ -172,12 +170,20 @@ namespace WorkloadExecutorMongoDB
 
             foreach (var document in bsonDocuments)
             {
-                //Insert
-                var swInsert = Stopwatch.StartNew();
-                await collection.InsertOneAsync(document).ConfigureAwait(false);
-                swInsert.Stop();
+                try
+                {
+                    //Insert
+                    var swInsert = Stopwatch.StartNew();
+                    await collection.InsertOneAsync(document).ConfigureAwait(false);
+                    swInsert.Stop();
 
-                insertTimeList.Add(swInsert.Elapsed.Milliseconds);
+                    insertTimeList.Add(swInsert.Elapsed.TotalMilliseconds);
+                }
+                catch (Exception e)
+                {
+                    context.Logger.LogLine($"Error: {e.Message} Trace {e.StackTrace}");
+                }
+                
             }
 
             return insertTimeList;

@@ -122,8 +122,7 @@ namespace WorkloadExecutorDynamoDB
                 var responseResult = await dynamoDbContext.LoadAsync<TwitterStreamModel>(id).ConfigureAwait(false);
                 swQuery.Stop();
 
-                readTimeList.Add(swQuery.Elapsed.Milliseconds);
-                //context.Logger.LogLine($"[Query Workload] id {id} takes {queryTimeNs} ms");
+                readTimeList.Add(swQuery.Elapsed.TotalMilliseconds);
             }
 
             return readTimeList;
@@ -153,8 +152,7 @@ namespace WorkloadExecutorDynamoDB
                 await dynamoDbContext.SaveAsync(responseResult).ConfigureAwait(false);
                 swUpdate.Stop();
 
-                updateTimeList.Add(swUpdate.Elapsed.Milliseconds);
-                //context.Logger.LogLine($"[Update Workload] id {id} takes {swUpdate.ElapsedMilliseconds} ms");
+                updateTimeList.Add(swUpdate.Elapsed.TotalMilliseconds);
 
             }
 
@@ -189,7 +187,7 @@ namespace WorkloadExecutorDynamoDB
                 
                 await dynamoDbBatch.ExecuteAsync().ConfigureAwait(false);
                 sw.Stop();
-                insertTimeList.Add(sw.Elapsed.Milliseconds);
+                insertTimeList.Add(sw.Elapsed.TotalMilliseconds);
             }
 
             return insertTimeList;
