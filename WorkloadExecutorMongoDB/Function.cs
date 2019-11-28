@@ -23,7 +23,7 @@ namespace WorkloadExecutorMongoDB
             {
                 var workload = JsonConvert.DeserializeObject<Workload>(record.Body);
 
-                context.Logger.LogLine($"Workload Read: {workload.Read} Update: {workload.Update} Insert: {workload.Insert}");
+                context.Logger.LogLine($"Workload Read: {workload.Read} Update: {workload.Update} Insert: {workload.Insert} Complex Query Times {workload.ComplexQuery}");
 
                 int count = workload.Ids.Count;
                 int readworkloadcount = (int) (count * workload.Read);
@@ -50,7 +50,6 @@ namespace WorkloadExecutorMongoDB
 
                     context.Logger.LogLine(readWorkloadReport);
                 }
-
 
 
                 //Update Workload Operations
@@ -99,6 +98,26 @@ namespace WorkloadExecutorMongoDB
                                                   $"[Insert] 99thPercentileLatency(ms)  {Percentile(insertWorkloadExecutionTimeList.ToArray(), 0.99)} \r\n";
 
                     context.Logger.LogLine(insertWorkloadReport);
+                }
+
+                //Complex Query Workload
+                if (workload.ComplexQuery > 0)
+                {
+                    var complexQueryTimes = await ExecuteComplexQueryWorkload(workload.ComplexQuery).ConfigureAwait(false);
+
+                    var maxReadLatency = complexQueryTimes.Max();
+                    var minReadLatency = complexQueryTimes.Min();
+                    var averageReadLatency = complexQueryTimes.Average();
+
+                    string queryWorkloadReport = $"Complex Query Workload Report \r\n" +
+                                                $"[Complex Query] Operation {workload.ComplexQuery} \r\n" +
+                                                $"[Complex Query] AverageLatency(ms) {averageReadLatency} \r\n" +
+                                                $"[Complex Query] MinLatency(ms) {minReadLatency} \r\n" +
+                                                $"[Complex Query] MaxLatency(ms) {maxReadLatency} \r\n" +
+                                                $"[Complex Query] 95thPercentileLatency(ms) {Percentile(complexQueryTimes.ToArray(), 0.95)} \r\n" +
+                                                $"[Complex Query] 99thPercentileLatency(ms)  {Percentile(complexQueryTimes.ToArray(), 0.99)} \r\n";
+
+                    context.Logger.LogLine(queryWorkloadReport);
                 }
             }
 
@@ -209,6 +228,32 @@ namespace WorkloadExecutorMongoDB
             return result;
         }
 
+        private async Task<List<double>> ExecuteComplexQueryWorkload(int queryTimes)
+        {
+            var complexQueryTime = new List<double>();
+            //
+            var client = new MongoClient(
+                "mongodb://34.246.18.10:27017"
+            );
+            var database = client.GetDatabase("twitter");
+            var collection = database.GetCollection<BsonDocument>("stream");
+
+            for (int i = 1; i < queryTimes; i++)
+            {
+                //Complex Query
+                var sw = Stopwatch.StartNew();
+                var aggregate = collection.Aggregate()
+                    .Group(new BsonDocument { { "_id", new BsonDocument("location", "$user.location") }, { "UserCount", new BsonDocument("$sum", 1) } })
+                    .Sort(new BsonDocument { { "UserCount", -1 } });
+
+                var results = await aggregate.ToListAsync();
+                sw.Stop();
+                complexQueryTime.Add(sw.Elapsed.TotalMilliseconds);
+            }
+
+            //
+            return complexQueryTime;
+        }
 
         private double Percentile(double[] sequence, double excelPercentile)
         {

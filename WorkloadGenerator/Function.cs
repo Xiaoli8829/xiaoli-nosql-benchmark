@@ -47,7 +47,8 @@ namespace WorkloadGenerator
                 Ids = toBeSentIds,
                 Read = config.Read,
                 Update = config.Update,
-                Insert = config.Insert
+                Insert = config.Insert,
+                ComplexQuery = config.ComplexQuery
             };
 
             await SendToSns(workload).ConfigureAwait(false);

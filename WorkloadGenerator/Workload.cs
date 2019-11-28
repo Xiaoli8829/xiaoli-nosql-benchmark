@@ -10,6 +10,8 @@ namespace WorkloadGenerator
 
         public double Insert { get; set; }
 
+        public int ComplexQuery { get; set; }
+
         public List<string> Ids { get; set; }
     }
 }
