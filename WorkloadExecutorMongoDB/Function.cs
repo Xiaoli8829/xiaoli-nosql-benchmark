@@ -242,11 +242,17 @@ namespace WorkloadExecutorMongoDB
             {
                 //Complex Query
                 var sw = Stopwatch.StartNew();
-                var aggregate = collection.Aggregate()
-                    .Group(new BsonDocument { { "_id", new BsonDocument("location", "$user.location") }, { "UserCount", new BsonDocument("$sum", 1) } })
-                    .Sort(new BsonDocument { { "UserCount", -1 } });
 
-                var results = await aggregate.ToListAsync();
+                var builder = Builders<BsonDocument>.Filter;
+                var filter = builder.Eq("user.verified", true)
+                             & builder.Gt("user.followers_count", 100)
+                             & builder.Not(builder.Eq("user.location", BsonNull.Value));
+
+                var cursor = await collection.FindAsync(filter).ConfigureAwait(false);
+                while (cursor.MoveNext())
+                {
+
+                }
                 sw.Stop();
                 complexQueryTime.Add(sw.Elapsed.TotalMilliseconds);
             }

@@ -2,11 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
+using Amazon;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
+using Amazon.DynamoDBv2.DocumentModel;
+using Amazon.DynamoDBv2.Model;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.SQSEvents;
+using Amazon.Runtime;
 using Newtonsoft.Json;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
@@ -29,6 +34,7 @@ namespace WorkloadExecutorDynamoDB
                 int readworkloadcount = (int)(count * workload.Read);
                 int updateworkloadcount = (int)(count * workload.Update);
                 int insertworkloadcount = (int) (count * workload.Insert);
+                int complexQueryWorkloadCount = workload.ComplexQuery;
 
                 //Read Workload Operations
                 if (readworkloadcount > 0)
@@ -97,6 +103,28 @@ namespace WorkloadExecutorDynamoDB
                                                   $"[Insert] 99thPercentileLatency(ms)  {Percentile(insertWorkloadExecutionTimeList.ToArray(), 0.99)} \r\n";
 
                     context.Logger.LogLine(insertWorkloadReport);
+                }
+
+                //Complex Workload Operations
+                if (complexQueryWorkloadCount > 0)
+                {
+                    var readWorkload = workload.Ids.Take(readworkloadcount).ToList();
+                    var complexQueryWorkloadExecutionTimeList = await ExecuteComplexQueryWorkload(complexQueryWorkloadCount).ConfigureAwait(false);
+
+                    var maxReadLatency = complexQueryWorkloadExecutionTimeList.Max();
+                    var minReadLatency = complexQueryWorkloadExecutionTimeList.Min();
+                    var averageReadLatency = complexQueryWorkloadExecutionTimeList.Average();
+
+                    string readWorkloadReport = $"Complex Query Workload Report \r\n" +
+                                                $"[Complex Query] Operation {readWorkload.Count} \r\n" +
+                                                $"[Complex Query] AverageLatency(ms) {averageReadLatency} \r\n" +
+                                                $"[Complex Query] MinLatency(ms) {minReadLatency} \r\n" +
+                                                $"[Complex Query] MaxLatency(ms) {maxReadLatency} \r\n" +
+                                                $"[Complex Query] 95thPercentileLatency(ms) {Percentile(complexQueryWorkloadExecutionTimeList.ToArray(), 0.95)} \r\n" +
+                                                $"[Complex Query" +
+                                                $"] 99thPercentileLatency(ms)  {Percentile(complexQueryWorkloadExecutionTimeList.ToArray(), 0.99)} \r\n";
+
+                    context.Logger.LogLine(readWorkloadReport);
                 }
             }            
         }
@@ -216,6 +244,53 @@ namespace WorkloadExecutorDynamoDB
             return twitterStreamModels;
         }
 
+        private async Task<List<double>> ExecuteComplexQueryWorkload(int queryTimes)
+        {
+            List<double> complexQueryTimeList = new List<double>();
+
+            AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
+            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+
+
+            AmazonDynamoDBClient amazonDynamoDbClient =
+                new AmazonDynamoDBClient(ddbConfig);
+
+            for (int i = 0; i < queryTimes; i++)
+            {
+                var sw = Stopwatch.StartNew();
+
+                //Find all tweets which the user is verified and has more than 100 followers and also has a location
+                var scanRequest = new ScanRequest
+                {
+                    TableName = "twitter-stream-data",
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        { ":v_user_followers_count", new AttributeValue { N = "100" } },
+                        { ":v_user_location", new AttributeValue { NULL = true} },
+                        {":v_user_verified", new AttributeValue{N = "1"} }
+                    },
+                    ExpressionAttributeNames = new Dictionary<string, string>
+
+                    {
+                        {"#user", "user"},
+                        {"#followers_count", "followers_count"},
+                        {"#location", "location"},
+                        {"#verified", "verified" }
+                    },
+                    FilterExpression = "#user.#followers_count > :v_user_followers_count " +
+                                       "AND #user.#location <> :v_user_location " +
+                                       "AND #user.#verified = :v_user_verified"
+                };
+
+                var response = await amazonDynamoDbClient.ScanAsync(scanRequest).ConfigureAwait(false);
+
+                sw.Stop();
+
+                complexQueryTimeList.Add(sw.Elapsed.Milliseconds);
+            }
+            
+            return complexQueryTimeList;
+        }
 
         private double Percentile(double[] sequence, double excelPercentile)
         {

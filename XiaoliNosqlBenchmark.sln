@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.757
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29519.87
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WorkloadGenerator", "WorkloadGenerator\WorkloadGenerator.csproj", "{C22D102D-B897-4E28-A8F4-2A8FA558A8BD}"
 EndProject
@@ -14,6 +14,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TwitterStreamConsumerMongoDB", "TwitterStreamConsumerMongoDB\TwitterStreamConsumerMongoDB.csproj", "{D0CE467A-1A5E-4CF1-BBC0-AF86E9BD0A0E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TwitterStreamConsumerDynamoDB", "TwitterStreamConsumerDynamoDB\TwitterStreamConsumerDynamoDB.csproj", "{2F1B6FC3-BA0C-4DCC-81D9-42002B4997D5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lambdas.Tests", "Lambdas.Tests\Lambdas.Tests.csproj", "{22C44BB6-40B4-4DCF-BA2F-80365D692890}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{2F1B6FC3-BA0C-4DCC-81D9-42002B4997D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2F1B6FC3-BA0C-4DCC-81D9-42002B4997D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2F1B6FC3-BA0C-4DCC-81D9-42002B4997D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22C44BB6-40B4-4DCF-BA2F-80365D692890}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22C44BB6-40B4-4DCF-BA2F-80365D692890}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22C44BB6-40B4-4DCF-BA2F-80365D692890}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22C44BB6-40B4-4DCF-BA2F-80365D692890}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
