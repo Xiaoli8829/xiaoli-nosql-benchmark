@@ -108,15 +108,14 @@ namespace WorkloadExecutorDynamoDB
                 //Complex Workload Operations
                 if (complexQueryWorkloadCount > 0)
                 {
-                    var readWorkload = workload.Ids.Take(readworkloadcount).ToList();
-                    var complexQueryWorkloadExecutionTimeList = await ExecuteComplexQueryWorkload(complexQueryWorkloadCount).ConfigureAwait(false);
+                    var complexQueryWorkloadExecutionTimeList = await ExecuteComplexQueryWithIndexWorkload(complexQueryWorkloadCount).ConfigureAwait(false);
 
                     var maxReadLatency = complexQueryWorkloadExecutionTimeList.Max();
                     var minReadLatency = complexQueryWorkloadExecutionTimeList.Min();
                     var averageReadLatency = complexQueryWorkloadExecutionTimeList.Average();
 
                     string readWorkloadReport = $"Complex Query Workload Report \r\n" +
-                                                $"[Complex Query] Operation {readWorkload.Count} \r\n" +
+                                                $"[Complex Query] Operation {complexQueryWorkloadCount} \r\n" +
                                                 $"[Complex Query] AverageLatency(ms) {averageReadLatency} \r\n" +
                                                 $"[Complex Query] MinLatency(ms) {minReadLatency} \r\n" +
                                                 $"[Complex Query] MaxLatency(ms) {maxReadLatency} \r\n" +
@@ -289,6 +288,53 @@ namespace WorkloadExecutorDynamoDB
                 complexQueryTimeList.Add(sw.Elapsed.Milliseconds);
             }
             
+            return complexQueryTimeList;
+        }
+
+        private async Task<List<double>> ExecuteComplexQueryWithIndexWorkload(int queryTimes)
+        {
+            List<double> complexQueryTimeList = new List<double>();
+
+            AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
+            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+
+
+            AmazonDynamoDBClient amazonDynamoDbClient =
+                new AmazonDynamoDBClient(ddbConfig);
+
+            for (int i = 0; i < queryTimes; i++)
+            {
+                var sw = Stopwatch.StartNew();
+
+                //Find all tweets which the user is verified and has more than 100 followers and also has a location
+                QueryRequest queryRequest = new QueryRequest
+                {
+                    TableName = "twitter",
+                    IndexName = "IndexTrustUser",
+                    KeyConditionExpression = "#uv = :v_userVerifiedLocation and #fc > :v_userFollowersCount",
+                    FilterExpression = "#user.#location <> :v_userLocation",
+                    ExpressionAttributeNames = new Dictionary<String, String> {
+                        {"#uv", "UserVerified"},
+                        {"#fc", "UserFollowerCount" },
+                        {"#user", "user" },
+                        {"#location", "location" },
+                    },
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>()
+                    {
+                        {":v_userVerifiedLocation",new AttributeValue {S = "True"}},
+                        {":v_userFollowersCount",new AttributeValue {N = "100"}},
+                        {":v_userLocation", new AttributeValue { NULL = true} }
+                    },
+                    ScanIndexForward = true
+                };
+
+                var response = amazonDynamoDbClient.QueryAsync(queryRequest).Result;
+
+                sw.Stop();
+
+                complexQueryTimeList.Add(sw.Elapsed.Milliseconds);
+            }
+
             return complexQueryTimeList;
         }
 

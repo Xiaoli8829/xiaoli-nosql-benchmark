@@ -17,6 +17,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TwitterStreamConsumerDynamo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lambdas.Tests", "Lambdas.Tests\Lambdas.Tests.csproj", "{22C44BB6-40B4-4DCF-BA2F-80365D692890}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".tests", ".tests", "{7022C435-E0E8-47AB-AFFC-C19DFE75B068}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TweetinviCoreConsoleApp", "TweetinviCoreConsoleApp\TweetinviCoreConsoleApp.csproj", "{549CFC22-B580-45AA-AD08-C0CCD856915F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,9 +55,17 @@ Global
 		{22C44BB6-40B4-4DCF-BA2F-80365D692890}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22C44BB6-40B4-4DCF-BA2F-80365D692890}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{22C44BB6-40B4-4DCF-BA2F-80365D692890}.Release|Any CPU.Build.0 = Release|Any CPU
+		{549CFC22-B580-45AA-AD08-C0CCD856915F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{549CFC22-B580-45AA-AD08-C0CCD856915F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{549CFC22-B580-45AA-AD08-C0CCD856915F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{549CFC22-B580-45AA-AD08-C0CCD856915F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{22C44BB6-40B4-4DCF-BA2F-80365D692890} = {7022C435-E0E8-47AB-AFFC-C19DFE75B068}
+		{549CFC22-B580-45AA-AD08-C0CCD856915F} = {7022C435-E0E8-47AB-AFFC-C19DFE75B068}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {249C2984-432F-46FD-ABB6-64D017D9684D}
