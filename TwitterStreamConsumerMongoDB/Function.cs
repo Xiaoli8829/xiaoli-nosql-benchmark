@@ -41,7 +41,7 @@ namespace TwitterStreamConsumerMongoDB
         private async Task SaveObjectToMongoDb(string jsonPayload)
         {
             var client = new MongoClient(
-                "mongodb://34.246.18.10:27017"
+                "mongodb://172.31.53.247:27017"
             );
             var database = client.GetDatabase("twitter");
             var collection = database.GetCollection<BsonDocument>("stream");
@@ -58,7 +58,7 @@ namespace TwitterStreamConsumerMongoDB
         private async Task SaveImageToMongoDb(string jsonPayload)
         {
             var client = new MongoClient(
-                "mongodb://34.246.18.10:27017"
+                "mongodb://172.31.53.247:27017"
             );
             var database = client.GetDatabase("twitter");
             var collection = database.GetCollection<BsonDocument>("image-stream");

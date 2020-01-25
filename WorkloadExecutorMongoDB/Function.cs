@@ -129,7 +129,7 @@ namespace WorkloadExecutorMongoDB
             List<double> readTimeList = new List<double>();
 
             var client = new MongoClient(
-                "mongodb://34.246.18.10:27017"
+                "mongodb://172.31.53.247:27017"
             );
             var database = client.GetDatabase("twitter");
             var collection = database.GetCollection<BsonDocument>("stream");
@@ -153,7 +153,7 @@ namespace WorkloadExecutorMongoDB
             List<double> updateTimeList = new List<double>();
 
             var client = new MongoClient(
-                "mongodb://34.246.18.10:27017"
+                "mongodb://172.31.53.247:27017"
             );
             var database = client.GetDatabase("twitter");
             var collection = database.GetCollection<BsonDocument>("stream");
@@ -178,7 +178,7 @@ namespace WorkloadExecutorMongoDB
             List<double> insertTimeList = new List<double>();
 
             var client = new MongoClient(
-                "mongodb://34.246.18.10:27017"
+                "mongodb://172.31.53.247:27017"
             );
             var database = client.GetDatabase("twitter-insert");
             var collection = database.GetCollection<BsonDocument>("stream");
@@ -213,7 +213,7 @@ namespace WorkloadExecutorMongoDB
             var result = new List<BsonDocument>();
 
             var client = new MongoClient(
-                "mongodb://34.246.18.10:27017"
+                "mongodb://172.31.53.247:27017"
             );
             var database = client.GetDatabase("twitter");
             var collection = database.GetCollection<BsonDocument>("stream");
@@ -233,7 +233,7 @@ namespace WorkloadExecutorMongoDB
             var complexQueryTime = new List<double>();
             //
             var client = new MongoClient(
-                "mongodb://34.246.18.10:27017"
+                "mongodb://172.31.53.247:27017"
             );
             var database = client.GetDatabase("twitter");
             var collection = database.GetCollection<BsonDocument>("stream");

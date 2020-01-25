@@ -57,7 +57,7 @@ namespace WorkloadGenerator
         private async Task<List<string>> ScanDynamoDBItemIds()
         {
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(ddbConfig);
@@ -80,7 +80,7 @@ namespace WorkloadGenerator
         private async Task<List<string>> ScanMongoDBItemIds()
         {
             var client = new MongoClient(
-                "mongodb://34.246.18.10:27017"
+                "mongodb://172.31.53.247:27017"
             );
             var database = client.GetDatabase("twitter");
             var collection = database.GetCollection<BsonDocument>("stream");
@@ -104,7 +104,7 @@ namespace WorkloadGenerator
         private async Task SendToSns(Workload workload)
         {           
             var snsClient = new AmazonSimpleNotificationServiceClient(LambdaConfiguration.Configuration["AWSAccessKey"], LambdaConfiguration.Configuration["AWSAccessSecret"]);
-            await snsClient.PublishAsync("arn:aws:sns:eu-west-1:341490012980:sns-workload-topic", JsonConvert.SerializeObject(workload)).ConfigureAwait(false);
+            await snsClient.PublishAsync("arn:aws:sns:eu-west-1:680951908609:sns-workload-topic", JsonConvert.SerializeObject(workload)).ConfigureAwait(false);
         }
 
         private void ConfigureServices(IServiceCollection serviceCollection)

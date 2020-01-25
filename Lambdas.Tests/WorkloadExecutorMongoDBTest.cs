@@ -13,7 +13,7 @@ namespace Lambdas.Tests
         public async Task Test_MongoDB_Aggregate()
         {
             var client = new MongoClient(
-                "mongodb://34.246.18.10:27017"
+                "mongodb://172.31.53.247:27017"
             );
             var database = client.GetDatabase("twitter");
             var collection = database.GetCollection<BsonDocument>("stream");
@@ -30,7 +30,7 @@ namespace Lambdas.Tests
         public async Task Test_MongoDB_ComplexQuery()
         {
             var client = new MongoClient(
-                "mongodb://34.246.18.10:27017"
+                "mongodb://172.31.53.247:27017"
             );
             var database = client.GetDatabase("twitter");
             var collection = database.GetCollection<BsonDocument>("stream");

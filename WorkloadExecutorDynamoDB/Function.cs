@@ -133,7 +133,7 @@ namespace WorkloadExecutorDynamoDB
             List<double> readTimeList = new List<double>();
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(ddbConfig);
@@ -160,7 +160,7 @@ namespace WorkloadExecutorDynamoDB
             List<double> updateTimeList = new List<double>();
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(ddbConfig);
@@ -194,7 +194,7 @@ namespace WorkloadExecutorDynamoDB
             var twitterModels = await QueryTwitterStreamData(ids, context).ConfigureAwait(false);
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(ddbConfig);
@@ -225,7 +225,7 @@ namespace WorkloadExecutorDynamoDB
             List<TwitterStreamModel> twitterStreamModels = new List<TwitterStreamModel>();
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(ddbConfig);
@@ -248,7 +248,7 @@ namespace WorkloadExecutorDynamoDB
             List<double> complexQueryTimeList = new List<double>();
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
 
             AmazonDynamoDBClient amazonDynamoDbClient =
@@ -296,7 +296,7 @@ namespace WorkloadExecutorDynamoDB
             List<double> complexQueryTimeList = new List<double>();
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
 
             AmazonDynamoDBClient amazonDynamoDbClient =

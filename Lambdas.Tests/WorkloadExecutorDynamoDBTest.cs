@@ -58,7 +58,7 @@ namespace Lambdas.Tests
         public async Task Test_DynamoDB_Local()
         {
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(credentials: new StoredProfileAWSCredentials("sheppards"), ddbConfig);
@@ -136,7 +136,7 @@ namespace Lambdas.Tests
         public async Task Test_DynamoDBLocal_ComplexQuery()
         {
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(credentials: new StoredProfileAWSCredentials("sheppards"), ddbConfig);
@@ -197,7 +197,7 @@ namespace Lambdas.Tests
         public async Task Test_DynamoDBLocal_ComplexScan()
         {
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(credentials: new StoredProfileAWSCredentials("sheppards"), ddbConfig);
