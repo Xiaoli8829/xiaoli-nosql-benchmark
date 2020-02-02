@@ -37,6 +37,9 @@ namespace WorkloadGenerator
             var itemIdsFromMongoDb = await ScanMongoDBItemIds().ConfigureAwait(false);
 
             var commonItemIds = itemIdsFromDynamoDb.Intersect(itemIdsFromMongoDb);
+
+            context.Logger.LogLine($"Ids from DynamoDB: count({itemIdsFromDynamoDb.Count}) {string.Join(",", itemIdsFromDynamoDb)}");
+            context.Logger.LogLine($"Ids from MongoDB:  count({itemIdsFromMongoDb.Count}) {string.Join(",", itemIdsFromMongoDb)}");
             context.Logger.LogLine($"Common count: {commonItemIds.Count()} Details: {string.Join(",", commonItemIds)}");
 
             //Send to SQS Queue
@@ -62,17 +65,32 @@ namespace WorkloadGenerator
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(ddbConfig);
 
-            var scanResult = await amazonDynamoDbClient.ScanAsync(new ScanRequest("twitter-stream-data")).ConfigureAwait(false);
-
             var result = new List<string>();
 
-            foreach (var item in scanResult.Items)
+
+            Dictionary<string, AttributeValue> lastKeyEvaluated = null;
+            do
             {
-                if (item.ContainsKey("id"))
+                var request = new ScanRequest
                 {
-                    result.Add(item["id"].S);
+                    TableName = "twitter-stream-data",
+                    Limit = 500,
+                    ExclusiveStartKey = lastKeyEvaluated
+                };
+
+                var response = await amazonDynamoDbClient.ScanAsync(request).ConfigureAwait(false);
+
+                foreach (Dictionary<string, AttributeValue> item
+                    in response.Items)
+                {
+                    if (item.ContainsKey("id"))
+                    {
+                        result.Add(item["id"].S);
+                    }
                 }
-            }
+                lastKeyEvaluated = response.LastEvaluatedKey;
+
+            } while (lastKeyEvaluated != null && lastKeyEvaluated.Count != 0);
 
             return result;
         }
