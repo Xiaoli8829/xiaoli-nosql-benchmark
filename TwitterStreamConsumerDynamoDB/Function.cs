@@ -27,7 +27,7 @@ namespace TwitterStreamConsumerDynamoDB
                 string recordData = GetRecordContents(record.Kinesis);
 
                 await SaveObjectToDynamoDb(recordData).ConfigureAwait(false);
-                await SaveImageToDynamoDb(recordData).ConfigureAwait(false);
+                //await SaveImageToDynamoDb(recordData).ConfigureAwait(false);
             }
         }
 

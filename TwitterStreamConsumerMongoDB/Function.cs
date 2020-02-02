@@ -26,7 +26,7 @@ namespace TwitterStreamConsumerMongoDB
                 string recordData = GetRecordContents(record.Kinesis);
              
                 await SaveObjectToMongoDb(recordData).ConfigureAwait(false);
-                await SaveImageToMongoDb(recordData).ConfigureAwait(false);
+                //await SaveImageToMongoDb(recordData).ConfigureAwait(false);
             }           
         }
 
