@@ -12,10 +12,12 @@
     "framework"     : "netcoreapp2.1",
     "function-runtime" : "dotnetcore2.1",
     "function-memory-size" : 256,
-    "function-timeout"     : 300,
+    "function-timeout"     : 900,
     "function-handler"     : "WorkloadExecutorDynamoDB::WorkloadExecutorDynamoDB.Function::FunctionHandler",
     "function-name"        : "WorkloadExecutorDynamoDB",
     "function-role"        : "arn:aws:iam::680951908609:role/LambdaAdminRole",
     "tracing-mode"         : "PassThrough",
-    "environment-variables" : ""
+    "environment-variables" : "",
+    "function-subnets"      : "subnet-f4cf32ae,subnet-73e65415,subnet-44b83b0c",
+    "function-security-groups" : "sg-30aed74d"
 }

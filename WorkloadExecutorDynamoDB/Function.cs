@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon;
 using Amazon.DynamoDBv2;
@@ -40,7 +41,21 @@ namespace WorkloadExecutorDynamoDB
                 if (readworkloadcount > 0)
                 {
                     var readWorkload = workload.Ids.Take(readworkloadcount).ToList();
-                    var readWorkloadExecutionTimeList = await ExecuteReadWorkload(readWorkload, context).ConfigureAwait(false);
+
+                    //Multi-Threads
+                    var multiThreadsResult = await readWorkload.ForEachSemaphoreAsync(5, x =>
+                    {
+                        return ExecuteReadWorkload(new List<string>
+                        {
+                            x
+                        }, context);
+                    }).ConfigureAwait(false);
+
+                    //var readWorkloadExecutionTimeList = await ExecuteReadWorkload(readWorkload, context).ConfigureAwait(false);
+
+                    var readWorkloadExecutionTimeList = multiThreadsResult.SelectMany(x => x).ToList();
+
+                    context.Logger.LogLine($"readWorkloadExecutionTimeList - {string.Join(" ms,", readWorkloadExecutionTimeList)}");
 
                     var maxReadLatency = readWorkloadExecutionTimeList.Max();
                     var minReadLatency = readWorkloadExecutionTimeList.Min();
@@ -61,8 +76,24 @@ namespace WorkloadExecutorDynamoDB
                 if (updateworkloadcount > 0)
                 {
                     var updateWorkload = workload.Ids.Take(updateworkloadcount).ToList();
-                    var udpateWorkloadExecutionTimeList =
-                        await ExecuteUpdateWorkload(updateWorkload, context).ConfigureAwait(false);
+
+
+                    //Multi Threads
+                    var multiThreadsResult = await updateWorkload.ForEachSemaphoreAsync(5, x =>
+                    {
+                        return ExecuteUpdateWorkload(new List<string>
+                        {
+                            x
+                        }, context);
+                    }).ConfigureAwait(false);
+
+                    var udpateWorkloadExecutionTimeList = multiThreadsResult.SelectMany(x => x).ToList();
+
+                    //Single Threads
+                    //var udpateWorkloadExecutionTimeList =
+                    //    await ExecuteUpdateWorkload(updateWorkload, context).ConfigureAwait(false);
+
+                    context.Logger.LogLine($"udpateWorkloadExecutionTimeList - {string.Join(" ms,", udpateWorkloadExecutionTimeList)}");
 
                     var maxUpdateLatency = udpateWorkloadExecutionTimeList.Max();
                     var minUpdateLatency = udpateWorkloadExecutionTimeList.Min();
@@ -85,8 +116,22 @@ namespace WorkloadExecutorDynamoDB
                 if (insertworkloadcount > 0)
                 {
                     var insertWorkload = workload.Ids.Take(insertworkloadcount).ToList();
-                    var insertWorkloadExecutionTimeList =
-                        await ExecuteInsertWorkload(insertWorkload, context).ConfigureAwait(false);
+
+                    //Multi Threads
+                    var multiThreadsResult = await insertWorkload.ForEachSemaphoreAsync(5, x =>
+                    {
+                        return ExecuteInsertWorkload(new List<string>
+                        {
+                            x
+                        }, context);
+                    }).ConfigureAwait(false);
+
+                    var insertWorkloadExecutionTimeList = multiThreadsResult.SelectMany(x => x).ToList();
+
+                    context.Logger.LogLine($"insertWorkloadExecutionTimeList - {string.Join(" ms,", insertWorkloadExecutionTimeList)}");
+
+                    //var insertWorkloadExecutionTimeList =
+                    //    await ExecuteInsertWorkload(insertWorkload, context).ConfigureAwait(false);
 
                     var maxInsertLatency = insertWorkloadExecutionTimeList.Max();
                     var minInsertLatency = insertWorkloadExecutionTimeList.Min();
@@ -168,6 +213,7 @@ namespace WorkloadExecutorDynamoDB
 
             string tableName = "twitter-stream-data";
             IDynamoDBContext dynamoDbContext = new DynamoDBContext(amazonDynamoDbClient);
+
 
             foreach (var id in ids)
             {

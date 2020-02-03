@@ -34,7 +34,22 @@ namespace WorkloadExecutorMongoDB
                 if (readworkloadcount > 0)
                 {
                     var readWorkload = workload.Ids.Take(readworkloadcount).ToList();
-                    var readWorkloadExecutionTimeList = await ExecuteReadWorkload(readWorkload, context).ConfigureAwait(false);
+
+                    //Multi-Threads
+                    var multiThreadsResult = await readWorkload.ForEachSemaphoreAsync(5, x =>
+                    {
+                        return ExecuteReadWorkload(new List<string>
+                        {
+                            x
+                        }, context);
+                    }).ConfigureAwait(false);
+
+                    var readWorkloadExecutionTimeList = multiThreadsResult.SelectMany(x => x).ToList();
+
+                    context.Logger.LogLine($"readWorkloadExecutionTimeList - {string.Join(" ms,", readWorkloadExecutionTimeList)}");
+
+                    //Single Thread
+                    //var readWorkloadExecutionTimeList = await ExecuteReadWorkload(readWorkload, context).ConfigureAwait(false);
 
                     var maxReadLatency = readWorkloadExecutionTimeList.Max();
                     var minReadLatency = readWorkloadExecutionTimeList.Min();
@@ -56,8 +71,23 @@ namespace WorkloadExecutorMongoDB
                 if (updateworkloadcount > 0)
                 {
                     var updateWorkload = workload.Ids.Take(updateworkloadcount).ToList();
-                    var udpateWorkloadExecutionTimeList =
-                        await ExecuteUpdateWorkload(updateWorkload, context).ConfigureAwait(false);
+
+                    //Multi Threads
+                    var multiThreadsResult = await updateWorkload.ForEachSemaphoreAsync(5, x =>
+                    {
+                        return ExecuteUpdateWorkload(new List<string>
+                        {
+                            x
+                        }, context);
+                    }).ConfigureAwait(false);
+
+                    var udpateWorkloadExecutionTimeList = multiThreadsResult.SelectMany(x => x).ToList();
+
+                    context.Logger.LogLine($"udpateWorkloadExecutionTimeList - {string.Join(" ms,", udpateWorkloadExecutionTimeList)}");
+
+                    //Single Thread
+                    //var udpateWorkloadExecutionTimeList =
+                    //    await ExecuteUpdateWorkload(updateWorkload, context).ConfigureAwait(false);
 
                     var maxUpdateLatency = udpateWorkloadExecutionTimeList.Max();
                     var minUpdateLatency = udpateWorkloadExecutionTimeList.Min();
@@ -80,8 +110,23 @@ namespace WorkloadExecutorMongoDB
                 if (insertworkloadcount > 0)
                 {
                     var insertWorkload = workload.Ids.Take(insertworkloadcount).ToList();
-                    var insertWorkloadExecutionTimeList =
-                        await ExecuteInsertWorkload(insertWorkload, context).ConfigureAwait(false);
+
+                    //Multi Threads
+                    var multiThreadsResult = await insertWorkload.ForEachSemaphoreAsync(5, x =>
+                    {
+                        return ExecuteInsertWorkload(new List<string>
+                        {
+                            x
+                        }, context);
+                    }).ConfigureAwait(false);
+
+                    var insertWorkloadExecutionTimeList = multiThreadsResult.SelectMany(x => x).ToList();
+
+                    context.Logger.LogLine($"insertWorkloadExecutionTimeList - {string.Join(" ms,", insertWorkloadExecutionTimeList)}");
+
+                    //Single Thread
+                    //var insertWorkloadExecutionTimeList =
+                    //    await ExecuteInsertWorkload(insertWorkload, context).ConfigureAwait(false);
 
                     var maxInsertLatency = insertWorkloadExecutionTimeList.Max();
                     var minInsertLatency = insertWorkloadExecutionTimeList.Min();
