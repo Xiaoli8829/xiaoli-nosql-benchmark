@@ -11,7 +11,7 @@
     "configuration" : "Release",
     "framework"     : "netcoreapp2.1",
     "function-runtime" : "dotnetcore2.1",
-    "function-memory-size" : 256,
+    "function-memory-size" : 512,
     "function-timeout"     : 900,
     "function-handler"     : "WorkloadExecutorDynamoDB::WorkloadExecutorDynamoDB.Function::FunctionHandler",
     "function-name"        : "WorkloadExecutorDynamoDB",

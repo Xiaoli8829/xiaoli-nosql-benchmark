@@ -13,5 +13,7 @@ namespace WorkloadGenerator
         public int ComplexQuery { get; set; }
 
         public List<string> Ids { get; set; }
+
+        public int Thread { get; set; }
     }
 }

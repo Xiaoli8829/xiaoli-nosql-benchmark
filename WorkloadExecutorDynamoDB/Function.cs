@@ -29,6 +29,10 @@ namespace WorkloadExecutorDynamoDB
             {
                 var workload = JsonConvert.DeserializeObject<Workload>(record.Body);
 
+                int multiThreadCount = Convert.ToInt32(workload.Thread);
+
+                context.Logger.LogLine($"========== multiThreadCount - {multiThreadCount}================");
+
                 context.Logger.LogLine($"Workload Read: {workload.Read} Update: {workload.Update} Insert: {workload.Insert}");
 
                 int count = workload.Ids.Count;
@@ -43,7 +47,7 @@ namespace WorkloadExecutorDynamoDB
                     var readWorkload = workload.Ids.Take(readworkloadcount).ToList();
 
                     //Multi-Threads
-                    var multiThreadsResult = await readWorkload.ForEachSemaphoreAsync(5, x =>
+                    var multiThreadsResult = await readWorkload.ForEachSemaphoreAsync(multiThreadCount, x =>
                     {
                         return ExecuteReadWorkload(new List<string>
                         {
@@ -79,7 +83,7 @@ namespace WorkloadExecutorDynamoDB
 
 
                     //Multi Threads
-                    var multiThreadsResult = await updateWorkload.ForEachSemaphoreAsync(5, x =>
+                    var multiThreadsResult = await updateWorkload.ForEachSemaphoreAsync(multiThreadCount, x =>
                     {
                         return ExecuteUpdateWorkload(new List<string>
                         {
@@ -118,7 +122,7 @@ namespace WorkloadExecutorDynamoDB
                     var insertWorkload = workload.Ids.Take(insertworkloadcount).ToList();
 
                     //Multi Threads
-                    var multiThreadsResult = await insertWorkload.ForEachSemaphoreAsync(5, x =>
+                    var multiThreadsResult = await insertWorkload.ForEachSemaphoreAsync(multiThreadCount, x =>
                     {
                         return ExecuteInsertWorkload(new List<string>
                         {

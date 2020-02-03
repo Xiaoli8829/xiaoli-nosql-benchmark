@@ -19,9 +19,14 @@ namespace WorkloadExecutorMongoDB
         
         public async Task FunctionHandler(SQSEvent sqsEvent, ILambdaContext context)
         {
+
             foreach (var record in sqsEvent.Records)
             {
                 var workload = JsonConvert.DeserializeObject<Workload>(record.Body);
+
+                int multiThreadCount = Convert.ToInt32(workload.Thread);
+
+                context.Logger.LogLine($"========== multiThreadCount - {multiThreadCount}================");
 
                 context.Logger.LogLine($"Workload Read: {workload.Read} Update: {workload.Update} Insert: {workload.Insert} Complex Query Times {workload.ComplexQuery}");
 
@@ -36,7 +41,7 @@ namespace WorkloadExecutorMongoDB
                     var readWorkload = workload.Ids.Take(readworkloadcount).ToList();
 
                     //Multi-Threads
-                    var multiThreadsResult = await readWorkload.ForEachSemaphoreAsync(5, x =>
+                    var multiThreadsResult = await readWorkload.ForEachSemaphoreAsync(multiThreadCount, x =>
                     {
                         return ExecuteReadWorkload(new List<string>
                         {
@@ -73,7 +78,7 @@ namespace WorkloadExecutorMongoDB
                     var updateWorkload = workload.Ids.Take(updateworkloadcount).ToList();
 
                     //Multi Threads
-                    var multiThreadsResult = await updateWorkload.ForEachSemaphoreAsync(5, x =>
+                    var multiThreadsResult = await updateWorkload.ForEachSemaphoreAsync(multiThreadCount, x =>
                     {
                         return ExecuteUpdateWorkload(new List<string>
                         {
@@ -112,7 +117,7 @@ namespace WorkloadExecutorMongoDB
                     var insertWorkload = workload.Ids.Take(insertworkloadcount).ToList();
 
                     //Multi Threads
-                    var multiThreadsResult = await insertWorkload.ForEachSemaphoreAsync(5, x =>
+                    var multiThreadsResult = await insertWorkload.ForEachSemaphoreAsync(multiThreadCount, x =>
                     {
                         return ExecuteInsertWorkload(new List<string>
                         {

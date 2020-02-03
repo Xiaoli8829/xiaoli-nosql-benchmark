@@ -51,7 +51,8 @@ namespace WorkloadGenerator
                 Read = config.Read,
                 Update = config.Update,
                 Insert = config.Insert,
-                ComplexQuery = config.ComplexQuery
+                ComplexQuery = config.ComplexQuery,
+                Thread = config.Thread
             };
 
             await SendToSns(workload).ConfigureAwait(false);

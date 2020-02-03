@@ -8,5 +8,6 @@
         public double Insert { get; set; }
 
         public int ComplexQuery { get; set; }
+        public int Thread { get; set; }
     }
 }
