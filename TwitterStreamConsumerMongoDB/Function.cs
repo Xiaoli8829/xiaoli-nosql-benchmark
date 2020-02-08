@@ -21,13 +21,20 @@ namespace TwitterStreamConsumerMongoDB
 
         public async Task FunctionHandler(KinesisEvent kinesisEvent, ILambdaContext context)
         {
+            context.Logger.LogLine($"Number of records from Kinesis: {kinesisEvent.Records.Count}");
+
+            var sw = Stopwatch.StartNew();
+
             foreach (var record in kinesisEvent.Records)
             {              
                 string recordData = GetRecordContents(record.Kinesis);
              
                 await SaveObjectToMongoDb(recordData).ConfigureAwait(false);
                 //await SaveImageToMongoDb(recordData).ConfigureAwait(false);
-            }           
+            }
+
+            sw.Stop();
+            context.Logger.LogLine($"Total run time: {sw.ElapsedMilliseconds} ms");
         }
 
         private string GetRecordContents(KinesisEvent.Record streamRecord)
@@ -49,10 +56,10 @@ namespace TwitterStreamConsumerMongoDB
             MongoDB.Bson.BsonDocument document
                 = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<BsonDocument>(jsonPayload);
 
-            var sw = Stopwatch.StartNew();
+            //var sw = Stopwatch.StartNew();
             await collection.InsertOneAsync(document).ConfigureAwait(false);       
-            sw.Stop();
-            Console.WriteLine($"Insert document take {sw.ElapsedMilliseconds} ms");
+            //sw.Stop();
+            //Console.WriteLine($"Insert document take {sw.ElapsedMilliseconds} ms");
         }
 
         private async Task SaveImageToMongoDb(string jsonPayload)

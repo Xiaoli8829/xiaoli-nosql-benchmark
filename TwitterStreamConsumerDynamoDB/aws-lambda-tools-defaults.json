@@ -11,13 +11,13 @@
     "configuration" : "Release",
     "framework"     : "netcoreapp2.1",
     "function-runtime" : "dotnetcore2.1",
-    "function-memory-size" : 256,
-    "function-timeout"     : 300,
+    "function-memory-size" : 512,
+    "function-timeout"     : 900,
     "function-handler"     : "TwitterStreamConsumerDynamoDB::TwitterStreamConsumerDynamoDB.Function::FunctionHandler",
     "function-name"        : "TwitterStreamConsumerDynamoDB",
     "function-role"        : "arn:aws:iam::680951908609:role/LambdaAdminRole",
     "tracing-mode"         : "PassThrough",
     "environment-variables" : "",
-    "function-subnets"      : "subnet-01cbec7f18e9c896e",
-    "function-security-groups" : "sg-0294881a958fd8d82"
+    "function-subnets"      : "subnet-f4cf32ae,subnet-73e65415,subnet-44b83b0c",
+    "function-security-groups" : "sg-30aed74d"
 }

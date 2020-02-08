@@ -61,7 +61,7 @@ namespace TwitterStreamPublisher
 
                 await StreamToKinisis(t.Json).ConfigureAwait(false);
 
-                context.Logger.LogLine(t.Json);
+                //context.Logger.LogLine(t.Json);
                 //Console.WriteLine(t.Tweet.FullText);
                 counter++;
             };
