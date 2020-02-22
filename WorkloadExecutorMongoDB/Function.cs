@@ -19,6 +19,8 @@ namespace WorkloadExecutorMongoDB
         
         public async Task FunctionHandler(SQSEvent sqsEvent, ILambdaContext context)
         {
+            double totalWorkloadms = 0;
+            double totalCount = 0;
             var sw = Stopwatch.StartNew();
 
             foreach (var record in sqsEvent.Records)
@@ -41,6 +43,8 @@ namespace WorkloadExecutorMongoDB
                 {
                     var readWorkload = workload.Ids.Take(readworkloadcount).ToList();
 
+                    var swreadworkload = Stopwatch.StartNew();
+
                     //Multi-Threads
                     var multiThreadsResult = await readWorkload.ForEachSemaphoreAsync(multiThreadCount, x =>
                     {
@@ -50,12 +54,12 @@ namespace WorkloadExecutorMongoDB
                         }, context);
                     }).ConfigureAwait(false);
 
+                    swreadworkload.Stop();
+                    totalWorkloadms += swreadworkload.Elapsed.TotalMilliseconds;
+
                     var readWorkloadExecutionTimeList = multiThreadsResult.SelectMany(x => x).ToList();
 
                     context.Logger.LogLine($"readWorkloadExecutionTimeList - {string.Join(" ms,", readWorkloadExecutionTimeList)}");
-
-                    //Single Thread
-                    //var readWorkloadExecutionTimeList = await ExecuteReadWorkload(readWorkload, context).ConfigureAwait(false);
 
                     var maxReadLatency = readWorkloadExecutionTimeList.Max();
                     var minReadLatency = readWorkloadExecutionTimeList.Min();
@@ -78,6 +82,8 @@ namespace WorkloadExecutorMongoDB
                 {
                     var updateWorkload = workload.Ids.Take(updateworkloadcount).ToList();
 
+                    var swupdateworkload = Stopwatch.StartNew();
+
                     //Multi Threads
                     var multiThreadsResult = await updateWorkload.ForEachSemaphoreAsync(multiThreadCount, x =>
                     {
@@ -87,13 +93,12 @@ namespace WorkloadExecutorMongoDB
                         }, context);
                     }).ConfigureAwait(false);
 
+                    swupdateworkload.Stop();
+                    totalWorkloadms += swupdateworkload.Elapsed.TotalMilliseconds;
+
                     var udpateWorkloadExecutionTimeList = multiThreadsResult.SelectMany(x => x).ToList();
 
                     context.Logger.LogLine($"udpateWorkloadExecutionTimeList - {string.Join(" ms,", udpateWorkloadExecutionTimeList)}");
-
-                    //Single Thread
-                    //var udpateWorkloadExecutionTimeList =
-                    //    await ExecuteUpdateWorkload(updateWorkload, context).ConfigureAwait(false);
 
                     var maxUpdateLatency = udpateWorkloadExecutionTimeList.Max();
                     var minUpdateLatency = udpateWorkloadExecutionTimeList.Min();
@@ -117,6 +122,8 @@ namespace WorkloadExecutorMongoDB
                 {
                     var insertWorkload = workload.Ids.Take(insertworkloadcount).ToList();
 
+                    var swinsertworkload = Stopwatch.StartNew();
+
                     //Multi Threads
                     var multiThreadsResult = await insertWorkload.ForEachSemaphoreAsync(multiThreadCount, x =>
                     {
@@ -126,13 +133,12 @@ namespace WorkloadExecutorMongoDB
                         }, context);
                     }).ConfigureAwait(false);
 
+                    swinsertworkload.Stop();
+                    totalWorkloadms += swinsertworkload.Elapsed.TotalMilliseconds;
+
                     var insertWorkloadExecutionTimeList = multiThreadsResult.SelectMany(x => x).ToList();
 
                     context.Logger.LogLine($"insertWorkloadExecutionTimeList - {string.Join(" ms,", insertWorkloadExecutionTimeList)}");
-
-                    //Single Thread
-                    //var insertWorkloadExecutionTimeList =
-                    //    await ExecuteInsertWorkload(insertWorkload, context).ConfigureAwait(false);
 
                     var maxInsertLatency = insertWorkloadExecutionTimeList.Max();
                     var minInsertLatency = insertWorkloadExecutionTimeList.Min();
@@ -169,11 +175,16 @@ namespace WorkloadExecutorMongoDB
                                                 $"[Complex Query] 99thPercentileLatency(ms)  {Percentile(complexQueryTimes.ToArray(), 0.99)} \r\n";
 
                     context.Logger.LogLine(queryWorkloadReport);
+                    totalWorkloadms += complexQueryTimes.Sum();
                 }
+
+                totalCount += count;
             }
 
             sw.Stop();
-            context.Logger.LogLine($"Total workload runtime - {sw.Elapsed.TotalMilliseconds} ms");
+            context.Logger.LogLine($"Total function runtime - {sw.Elapsed.TotalMilliseconds} ms");
+            context.Logger.LogLine($"Total workload runtime - {totalWorkloadms} ms");
+            context.Logger.LogLine($"Throughput - {totalCount / totalWorkloadms * 1000} ops/s");
         }
 
         private async Task<List<double>> ExecuteReadWorkload(List<string> ids, ILambdaContext context)
