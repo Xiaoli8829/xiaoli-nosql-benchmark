@@ -55,7 +55,7 @@ namespace WorkloadExecutorDynamoDB
                     //Multi-Threads
                     var multiThreadsResult = await readWorkload.ForEachSemaphoreAsync(multiThreadCount, x =>
                     {
-                        return ExecuteReadWorkload(new List<string>
+                        return ExecuteReadWorkload_LowLevel(new List<string>
                         {
                             x
                         }, context);
@@ -406,6 +406,54 @@ namespace WorkloadExecutorDynamoDB
 
             return complexQueryTimeList;
         }
+
+        private async Task<List<double>> ExecuteReadWorkload_LowLevel(List<string> ids, ILambdaContext context)
+        {
+            List<double> readTimeList = new List<double>();
+
+            AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
+
+            AmazonDynamoDBClient amazonDynamoDbClient =
+                new AmazonDynamoDBClient(ddbConfig);
+
+
+            string tableName = "twitter-stream-data";
+            IDynamoDBContext dynamoDbContext = new DynamoDBContext(amazonDynamoDbClient);
+
+            foreach (var id in ids)
+            {
+                //Measure Query
+                var swQuery = Stopwatch.StartNew();
+
+                AttributeValue hashKey = new AttributeValue { S = id };
+                Dictionary<string, Condition> keyConditions = new Dictionary<string, Condition>
+                {
+                    // Hash key condition. ComparisonOperator must be "EQ".
+                    {
+                        "id",
+                        new Condition
+                        {
+                            ComparisonOperator = "EQ",
+                            AttributeValueList = new List<AttributeValue> { hashKey }
+                        }
+                    }
+                };
+                var response = await amazonDynamoDbClient.QueryAsync(new QueryRequest
+                {
+                    TableName = tableName,
+                    KeyConditions = keyConditions
+                }).ConfigureAwait(false);
+
+
+                swQuery.Stop();
+
+                readTimeList.Add(swQuery.Elapsed.TotalMilliseconds);
+            }
+
+            return readTimeList;
+        }
+
 
         private double Percentile(double[] sequence, double excelPercentile)
         {

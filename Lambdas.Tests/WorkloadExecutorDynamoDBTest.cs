@@ -229,5 +229,39 @@ namespace Lambdas.Tests
 
         }
 
+
+        [Fact]
+        public async Task Test_Workload_Query_LowLevel()
+        {
+            AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
+            ddbConfig.ServiceURL = "http://52.19.170.28:8000";
+
+            AmazonDynamoDBClient amazonDynamoDbClient =
+                new AmazonDynamoDBClient(credentials: new StoredProfileAWSCredentials("Xiaoli-Private"), ddbConfig);
+
+            string tableName = "twitter-stream-data";
+
+            AttributeValue hashKey = new AttributeValue { S = "1195834867726110720" };
+            Dictionary<string, Condition> keyConditions = new Dictionary<string, Condition>
+            {
+                // Hash key condition. ComparisonOperator must be "EQ".
+                {
+                    "id",
+                    new Condition
+                    {
+                        ComparisonOperator = "EQ",
+                        AttributeValueList = new List<AttributeValue> { hashKey }
+                    }
+                }
+            };
+            var response = await amazonDynamoDbClient.QueryAsync(new QueryRequest
+            {
+                TableName = tableName,
+                KeyConditions = keyConditions
+            }).ConfigureAwait(false);
+
+
+        }
+
     }
 }

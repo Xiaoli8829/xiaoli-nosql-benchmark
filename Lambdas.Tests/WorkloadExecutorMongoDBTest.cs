@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using MongoDB.Bson;
@@ -60,6 +61,55 @@ namespace Lambdas.Tests
             }
 
             Assert.True(true);
+        }
+
+        [Fact]
+        public async Task Test_MongoDB_FindByKeyValue()
+        {
+            var client = new MongoClient(
+                "mongodb://52.19.170.28:27017"
+            );
+            var database = client.GetDatabase("twitter");
+            var collection = database.GetCollection<BsonDocument>("stream");
+
+            string key = "5dc7d34ebdbed200025b33d3";
+
+            var swRead = Stopwatch.StartNew();
+
+            for (int i = 0; i < 10000; i++)
+            {
+                var filter = new BsonDocument("_id", key);
+                var result = await collection.FindAsync(new BsonDocumentFilterDefinition<BsonDocument>(filter)).ConfigureAwait(false);
+            }
+            swRead.Stop();
+
+            Console.WriteLine($"FindByKeyValue {swRead.Elapsed.TotalMilliseconds} ms");
+
+        }
+
+
+        [Fact]
+        public async Task Test_MongoDB_FindByIdProperty()
+        {
+            var client = new MongoClient(
+                "mongodb://52.19.170.28:27017"
+            );
+            var database = client.GetDatabase("twitter");
+            var collection = database.GetCollection<BsonDocument>("stream");
+            string key = "1193455036409380867";
+
+            var swRead = Stopwatch.StartNew();
+
+            for (int i = 0; i < 10000; i++)
+            {
+                var filter = new BsonDocument("id_str", key);
+                var result = await collection.FindAsync(new BsonDocumentFilterDefinition<BsonDocument>(filter)).ConfigureAwait(false);
+            }
+
+            swRead.Stop();
+
+
+            Console.WriteLine($"FindByIdProperty {swRead.Elapsed.TotalMilliseconds} ms");
         }
     }
 }
