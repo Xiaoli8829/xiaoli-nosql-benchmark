@@ -19,6 +19,7 @@ namespace WorkloadExecutorMongoDB
         
         public async Task FunctionHandler(SQSEvent sqsEvent, ILambdaContext context)
         {
+            var sw = Stopwatch.StartNew();
 
             foreach (var record in sqsEvent.Records)
             {
@@ -171,6 +172,8 @@ namespace WorkloadExecutorMongoDB
                 }
             }
 
+            sw.Stop();
+            context.Logger.LogLine($"Total workload runtime - {sw.Elapsed.TotalMilliseconds} ms");
         }
 
         private async Task<List<double>> ExecuteReadWorkload(List<string> ids, ILambdaContext context)

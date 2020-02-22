@@ -25,13 +25,15 @@ namespace WorkloadExecutorDynamoDB
         
         public async Task FunctionHandler(SQSEvent sqsEvent, ILambdaContext context)
         {
+            var sw = Stopwatch.StartNew();
+
             foreach (var record in sqsEvent.Records)
             {
                 var workload = JsonConvert.DeserializeObject<Workload>(record.Body);
 
                 int multiThreadCount = Convert.ToInt32(workload.Thread);
 
-                context.Logger.LogLine($"========== multiThreadCount - {multiThreadCount}================");
+                context.Logger.LogLine($"========== multiThreadCount -- {multiThreadCount}================");
 
                 context.Logger.LogLine($"Workload Read: {workload.Read} Update: {workload.Update} Insert: {workload.Insert}");
 
@@ -105,7 +107,7 @@ namespace WorkloadExecutorDynamoDB
 
 
 
-                    string udpateWorkloadReport = $"Update Worload Report \r\n" +
+                    string udpateWorkloadReport = $"Update Workload Report \r\n" +
                                                   $"[Update] Operation {updateWorkload.Count} \r\n" +
                                                   $"[Update] AverageLatency(ms) {averageUpdateLatency} \r\n" +
                                                   $"[Update] MinLatency(ms) {minUpdateLatency} \r\n" +
@@ -143,7 +145,7 @@ namespace WorkloadExecutorDynamoDB
 
 
 
-                    string insertWorkloadReport = $"Insert Worload Report \r\n" +
+                    string insertWorkloadReport = $"Insert Workload Report \r\n" +
                                                   $"[Insert] Operation {insertWorkload.Count} \r\n" +
                                                   $"[Insert] AverageLatency(ms) {averageInsertLatency} \r\n" +
                                                   $"[Insert] MinLatency(ms) {minInsertLatency} \r\n" +
@@ -174,7 +176,11 @@ namespace WorkloadExecutorDynamoDB
 
                     context.Logger.LogLine(readWorkloadReport);
                 }
-            }            
+
+            }
+
+            sw.Stop();
+            context.Logger.LogLine($"Total workload runtime - {sw.Elapsed.TotalMilliseconds} ms");
         }
 
         private async Task<List<double>> ExecuteReadWorkload(List<string> ids, ILambdaContext context)
