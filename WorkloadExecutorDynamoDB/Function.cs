@@ -442,7 +442,8 @@ namespace WorkloadExecutorDynamoDB
                 var response = await amazonDynamoDbClient.QueryAsync(new QueryRequest
                 {
                     TableName = tableName,
-                    KeyConditions = keyConditions
+                    KeyConditions = keyConditions,
+                    ConsistentRead = true
                 }).ConfigureAwait(false);
 
 
