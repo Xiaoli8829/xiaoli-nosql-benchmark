@@ -58,7 +58,7 @@ namespace Lambdas.Tests
         public async Task Test_DynamoDB_Local()
         {
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(credentials: new StoredProfileAWSCredentials("sheppards"), ddbConfig);
@@ -136,7 +136,7 @@ namespace Lambdas.Tests
         public async Task Test_DynamoDBLocal_ComplexQuery()
         {
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(credentials: new StoredProfileAWSCredentials("sheppards"), ddbConfig);
@@ -197,7 +197,7 @@ namespace Lambdas.Tests
         public async Task Test_DynamoDBLocal_ComplexScan()
         {
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(credentials: new StoredProfileAWSCredentials("sheppards"), ddbConfig);
@@ -226,6 +226,40 @@ namespace Lambdas.Tests
             };
 
             var response = await amazonDynamoDbClient.ScanAsync(scanRequest).ConfigureAwait(false);
+
+        }
+
+
+        [Fact]
+        public async Task Test_Workload_Query_LowLevel()
+        {
+            AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
+            ddbConfig.ServiceURL = "http://52.19.170.28:8000";
+
+            AmazonDynamoDBClient amazonDynamoDbClient =
+                new AmazonDynamoDBClient(credentials: new StoredProfileAWSCredentials("Xiaoli-Private"), ddbConfig);
+
+            string tableName = "twitter-stream-data";
+
+            AttributeValue hashKey = new AttributeValue { S = "1195834867726110720" };
+            Dictionary<string, Condition> keyConditions = new Dictionary<string, Condition>
+            {
+                // Hash key condition. ComparisonOperator must be "EQ".
+                {
+                    "id",
+                    new Condition
+                    {
+                        ComparisonOperator = "EQ",
+                        AttributeValueList = new List<AttributeValue> { hashKey }
+                    }
+                }
+            };
+            var response = await amazonDynamoDbClient.QueryAsync(new QueryRequest
+            {
+                TableName = tableName,
+                KeyConditions = keyConditions
+            }).ConfigureAwait(false);
+
 
         }
 

@@ -37,6 +37,9 @@ namespace WorkloadGenerator
             var itemIdsFromMongoDb = await ScanMongoDBItemIds().ConfigureAwait(false);
 
             var commonItemIds = itemIdsFromDynamoDb.Intersect(itemIdsFromMongoDb);
+
+            context.Logger.LogLine($"Ids from DynamoDB: count({itemIdsFromDynamoDb.Count}) {string.Join(",", itemIdsFromDynamoDb)}");
+            context.Logger.LogLine($"Ids from MongoDB:  count({itemIdsFromMongoDb.Count}) {string.Join(",", itemIdsFromMongoDb)}");
             context.Logger.LogLine($"Common count: {commonItemIds.Count()} Details: {string.Join(",", commonItemIds)}");
 
             //Send to SQS Queue
@@ -48,7 +51,8 @@ namespace WorkloadGenerator
                 Read = config.Read,
                 Update = config.Update,
                 Insert = config.Insert,
-                ComplexQuery = config.ComplexQuery
+                ComplexQuery = config.ComplexQuery,
+                Thread = config.Thread
             };
 
             await SendToSns(workload).ConfigureAwait(false);
@@ -57,22 +61,37 @@ namespace WorkloadGenerator
         private async Task<List<string>> ScanDynamoDBItemIds()
         {
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(ddbConfig);
 
-            var scanResult = await amazonDynamoDbClient.ScanAsync(new ScanRequest("twitter-stream-data")).ConfigureAwait(false);
-
             var result = new List<string>();
 
-            foreach (var item in scanResult.Items)
+
+            Dictionary<string, AttributeValue> lastKeyEvaluated = null;
+            do
             {
-                if (item.ContainsKey("id"))
+                var request = new ScanRequest
                 {
-                    result.Add(item["id"].S);
+                    TableName = "twitter-stream-data",
+                    Limit = 500,
+                    ExclusiveStartKey = lastKeyEvaluated
+                };
+
+                var response = await amazonDynamoDbClient.ScanAsync(request).ConfigureAwait(false);
+
+                foreach (Dictionary<string, AttributeValue> item
+                    in response.Items)
+                {
+                    if (item.ContainsKey("id"))
+                    {
+                        result.Add(item["id"].S);
+                    }
                 }
-            }
+                lastKeyEvaluated = response.LastEvaluatedKey;
+
+            } while (lastKeyEvaluated != null && lastKeyEvaluated.Count != 0);
 
             return result;
         }
@@ -80,7 +99,7 @@ namespace WorkloadGenerator
         private async Task<List<string>> ScanMongoDBItemIds()
         {
             var client = new MongoClient(
-                "mongodb://34.246.18.10:27017"
+                "mongodb://172.31.53.247:27017"
             );
             var database = client.GetDatabase("twitter");
             var collection = database.GetCollection<BsonDocument>("stream");
@@ -104,7 +123,7 @@ namespace WorkloadGenerator
         private async Task SendToSns(Workload workload)
         {           
             var snsClient = new AmazonSimpleNotificationServiceClient(LambdaConfiguration.Configuration["AWSAccessKey"], LambdaConfiguration.Configuration["AWSAccessSecret"]);
-            await snsClient.PublishAsync("arn:aws:sns:eu-west-1:341490012980:sns-workload-topic", JsonConvert.SerializeObject(workload)).ConfigureAwait(false);
+            await snsClient.PublishAsync("arn:aws:sns:eu-west-1:680951908609:sns-workload-topic", JsonConvert.SerializeObject(workload)).ConfigureAwait(false);
         }
 
         private void ConfigureServices(IServiceCollection serviceCollection)

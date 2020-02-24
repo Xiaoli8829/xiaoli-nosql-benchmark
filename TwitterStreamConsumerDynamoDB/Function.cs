@@ -27,7 +27,7 @@ namespace TwitterStreamConsumerDynamoDB
                 string recordData = GetRecordContents(record.Kinesis);
 
                 await SaveObjectToDynamoDb(recordData).ConfigureAwait(false);
-                await SaveImageToDynamoDb(recordData).ConfigureAwait(false);
+                //await SaveImageToDynamoDb(recordData).ConfigureAwait(false);
             }
         }
 
@@ -45,7 +45,7 @@ namespace TwitterStreamConsumerDynamoDB
             var twitterObject = JsonConvert.DeserializeObject<TwitterStreamModel>(jsonPayload);
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(ddbConfig);
 
@@ -62,7 +62,7 @@ namespace TwitterStreamConsumerDynamoDB
         {
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(ddbConfig);

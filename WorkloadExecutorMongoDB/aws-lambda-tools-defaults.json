@@ -6,16 +6,18 @@
         "dotnet lambda help",
         "All the command line options for the Lambda command can be specified in this file."
     ],
-    "profile"     : "sheppards",
+    "profile"     : "Xiaoli-Private",
     "region"      : "eu-west-1",
     "configuration" : "Release",
     "framework"     : "netcoreapp2.1",
     "function-runtime" : "dotnetcore2.1",
-    "function-memory-size" : 256,
-    "function-timeout"     : 300,
+    "function-memory-size" : 512,
+    "function-timeout"     : 900,
     "function-handler"     : "WorkloadExecutorMongoDB::WorkloadExecutorMongoDB.Function::FunctionHandler",
     "function-name"        : "WorkloadExecutorMongoDB",
-    "function-role"        : "arn:aws:iam::341490012980:role/lambda_exec_kinesis-consumer-function",
+    "function-role"        : "arn:aws:iam::680951908609:role/LambdaAdminRole",
     "tracing-mode"         : "PassThrough",
-    "environment-variables" : ""
+    "environment-variables" : "",
+    "function-subnets"      : "subnet-f4cf32ae,subnet-73e65415,subnet-44b83b0c",
+    "function-security-groups" : "sg-30aed74d"
 }

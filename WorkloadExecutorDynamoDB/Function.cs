@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon;
 using Amazon.DynamoDBv2;
@@ -24,9 +25,17 @@ namespace WorkloadExecutorDynamoDB
         
         public async Task FunctionHandler(SQSEvent sqsEvent, ILambdaContext context)
         {
+            double totalWorkloadms = 0;
+            double totalCount = 0;
+            var sw = Stopwatch.StartNew();
+
             foreach (var record in sqsEvent.Records)
             {
                 var workload = JsonConvert.DeserializeObject<Workload>(record.Body);
+
+                int multiThreadCount = Convert.ToInt32(workload.Thread);
+
+                context.Logger.LogLine($"========== multiThreadCount -- {multiThreadCount}================");
 
                 context.Logger.LogLine($"Workload Read: {workload.Read} Update: {workload.Update} Insert: {workload.Insert}");
 
@@ -40,7 +49,24 @@ namespace WorkloadExecutorDynamoDB
                 if (readworkloadcount > 0)
                 {
                     var readWorkload = workload.Ids.Take(readworkloadcount).ToList();
-                    var readWorkloadExecutionTimeList = await ExecuteReadWorkload(readWorkload, context).ConfigureAwait(false);
+
+                    var swreadworkload = Stopwatch.StartNew();
+
+                    //Multi-Threads
+                    var multiThreadsResult = await readWorkload.ForEachSemaphoreAsync(multiThreadCount, x =>
+                    {
+                        return ExecuteReadWorkload_LowLevel(new List<string>
+                        {
+                            x
+                        }, context);
+                    }).ConfigureAwait(false);
+
+                    swreadworkload.Stop();
+                    totalWorkloadms += swreadworkload.Elapsed.TotalMilliseconds;
+
+                    var readWorkloadExecutionTimeList = multiThreadsResult.SelectMany(x => x).ToList();
+
+                    context.Logger.LogLine($"readWorkloadExecutionTimeList - {string.Join(" ms,", readWorkloadExecutionTimeList)}");
 
                     var maxReadLatency = readWorkloadExecutionTimeList.Max();
                     var minReadLatency = readWorkloadExecutionTimeList.Min();
@@ -61,8 +87,25 @@ namespace WorkloadExecutorDynamoDB
                 if (updateworkloadcount > 0)
                 {
                     var updateWorkload = workload.Ids.Take(updateworkloadcount).ToList();
-                    var udpateWorkloadExecutionTimeList =
-                        await ExecuteUpdateWorkload(updateWorkload, context).ConfigureAwait(false);
+
+                    var swupdateworkload = Stopwatch.StartNew();
+
+                    //Multi Threads
+                    var multiThreadsResult = await updateWorkload.ForEachSemaphoreAsync(multiThreadCount, x =>
+                    {
+                        return ExecuteUpdateWorkload(new List<string>
+                        {
+                            x
+                        }, context);
+                    }).ConfigureAwait(false);
+
+
+                    swupdateworkload.Stop();
+                    totalWorkloadms += swupdateworkload.Elapsed.TotalMilliseconds;
+
+                    var udpateWorkloadExecutionTimeList = multiThreadsResult.SelectMany(x => x).ToList();
+
+                    context.Logger.LogLine($"udpateWorkloadExecutionTimeList - {string.Join(" ms,", udpateWorkloadExecutionTimeList)}");
 
                     var maxUpdateLatency = udpateWorkloadExecutionTimeList.Max();
                     var minUpdateLatency = udpateWorkloadExecutionTimeList.Min();
@@ -70,7 +113,7 @@ namespace WorkloadExecutorDynamoDB
 
 
 
-                    string udpateWorkloadReport = $"Update Worload Report \r\n" +
+                    string udpateWorkloadReport = $"Update Workload Report \r\n" +
                                                   $"[Update] Operation {updateWorkload.Count} \r\n" +
                                                   $"[Update] AverageLatency(ms) {averageUpdateLatency} \r\n" +
                                                   $"[Update] MinLatency(ms) {minUpdateLatency} \r\n" +
@@ -85,8 +128,25 @@ namespace WorkloadExecutorDynamoDB
                 if (insertworkloadcount > 0)
                 {
                     var insertWorkload = workload.Ids.Take(insertworkloadcount).ToList();
-                    var insertWorkloadExecutionTimeList =
-                        await ExecuteInsertWorkload(insertWorkload, context).ConfigureAwait(false);
+
+                    var swinsertworkload = Stopwatch.StartNew();
+
+                    //Multi Threads
+                    var multiThreadsResult = await insertWorkload.ForEachSemaphoreAsync(multiThreadCount, x =>
+                    {
+                        return ExecuteInsertWorkload(new List<string>
+                        {
+                            x
+                        }, context);
+                    }).ConfigureAwait(false);
+
+
+                    swinsertworkload.Stop();
+                    totalWorkloadms += swinsertworkload.Elapsed.TotalMilliseconds;
+
+                    var insertWorkloadExecutionTimeList = multiThreadsResult.SelectMany(x => x).ToList();
+
+                    context.Logger.LogLine($"insertWorkloadExecutionTimeList - {string.Join(" ms,", insertWorkloadExecutionTimeList)}");
 
                     var maxInsertLatency = insertWorkloadExecutionTimeList.Max();
                     var minInsertLatency = insertWorkloadExecutionTimeList.Min();
@@ -94,7 +154,7 @@ namespace WorkloadExecutorDynamoDB
 
 
 
-                    string insertWorkloadReport = $"Insert Worload Report \r\n" +
+                    string insertWorkloadReport = $"Insert Workload Report \r\n" +
                                                   $"[Insert] Operation {insertWorkload.Count} \r\n" +
                                                   $"[Insert] AverageLatency(ms) {averageInsertLatency} \r\n" +
                                                   $"[Insert] MinLatency(ms) {minInsertLatency} \r\n" +
@@ -124,8 +184,16 @@ namespace WorkloadExecutorDynamoDB
                                                 $"] 99thPercentileLatency(ms)  {Percentile(complexQueryWorkloadExecutionTimeList.ToArray(), 0.99)} \r\n";
 
                     context.Logger.LogLine(readWorkloadReport);
+                    totalWorkloadms += complexQueryWorkloadExecutionTimeList.Sum();
                 }
-            }            
+
+                totalCount += count;
+            }
+
+            sw.Stop();
+            context.Logger.LogLine($"Total function runtime - {sw.Elapsed.TotalMilliseconds} ms");
+            context.Logger.LogLine($"Total workload runtime - {totalWorkloadms} ms");
+            context.Logger.LogLine($"Throughput - {totalCount / totalWorkloadms * 1000} ops/s");
         }
 
         private async Task<List<double>> ExecuteReadWorkload(List<string> ids, ILambdaContext context)
@@ -133,7 +201,7 @@ namespace WorkloadExecutorDynamoDB
             List<double> readTimeList = new List<double>();
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(ddbConfig);
@@ -160,7 +228,7 @@ namespace WorkloadExecutorDynamoDB
             List<double> updateTimeList = new List<double>();
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(ddbConfig);
@@ -168,6 +236,7 @@ namespace WorkloadExecutorDynamoDB
 
             string tableName = "twitter-stream-data";
             IDynamoDBContext dynamoDbContext = new DynamoDBContext(amazonDynamoDbClient);
+
 
             foreach (var id in ids)
             {
@@ -194,7 +263,7 @@ namespace WorkloadExecutorDynamoDB
             var twitterModels = await QueryTwitterStreamData(ids, context).ConfigureAwait(false);
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(ddbConfig);
@@ -225,7 +294,7 @@ namespace WorkloadExecutorDynamoDB
             List<TwitterStreamModel> twitterStreamModels = new List<TwitterStreamModel>();
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
             AmazonDynamoDBClient amazonDynamoDbClient =
                 new AmazonDynamoDBClient(ddbConfig);
@@ -248,7 +317,7 @@ namespace WorkloadExecutorDynamoDB
             List<double> complexQueryTimeList = new List<double>();
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
 
             AmazonDynamoDBClient amazonDynamoDbClient =
@@ -296,7 +365,7 @@ namespace WorkloadExecutorDynamoDB
             List<double> complexQueryTimeList = new List<double>();
 
             AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
-            ddbConfig.ServiceURL = "http://34.246.18.10:8000";
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
 
 
             AmazonDynamoDBClient amazonDynamoDbClient =
@@ -337,6 +406,55 @@ namespace WorkloadExecutorDynamoDB
 
             return complexQueryTimeList;
         }
+
+        private async Task<List<double>> ExecuteReadWorkload_LowLevel(List<string> ids, ILambdaContext context)
+        {
+            List<double> readTimeList = new List<double>();
+
+            AmazonDynamoDBConfig ddbConfig = new AmazonDynamoDBConfig();
+            ddbConfig.ServiceURL = "http://172.31.49.235:8000";
+
+            AmazonDynamoDBClient amazonDynamoDbClient =
+                new AmazonDynamoDBClient(ddbConfig);
+
+
+            string tableName = "twitter-stream-data";
+            IDynamoDBContext dynamoDbContext = new DynamoDBContext(amazonDynamoDbClient);
+
+            foreach (var id in ids)
+            {
+                //Measure Query
+                var swQuery = Stopwatch.StartNew();
+
+                AttributeValue hashKey = new AttributeValue { S = id };
+                Dictionary<string, Condition> keyConditions = new Dictionary<string, Condition>
+                {
+                    // Hash key condition. ComparisonOperator must be "EQ".
+                    {
+                        "id",
+                        new Condition
+                        {
+                            ComparisonOperator = "EQ",
+                            AttributeValueList = new List<AttributeValue> { hashKey }
+                        }
+                    }
+                };
+                var response = await amazonDynamoDbClient.QueryAsync(new QueryRequest
+                {
+                    TableName = tableName,
+                    KeyConditions = keyConditions,
+                    ConsistentRead = true
+                }).ConfigureAwait(false);
+
+
+                swQuery.Stop();
+
+                readTimeList.Add(swQuery.Elapsed.TotalMilliseconds);
+            }
+
+            return readTimeList;
+        }
+
 
         private double Percentile(double[] sequence, double excelPercentile)
         {

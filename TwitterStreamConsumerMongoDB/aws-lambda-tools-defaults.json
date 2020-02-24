@@ -6,7 +6,7 @@
         "dotnet lambda help",
         "All the command line options for the Lambda command can be specified in this file."
     ],
-    "profile"     : "sheppards",
+    "profile"     : "Xiaoli-Private",
     "region"      : "eu-west-1",
     "configuration" : "Release",
     "framework"     : "netcoreapp2.1",
@@ -15,7 +15,7 @@
     "function-timeout"     : 300,
     "function-handler"     : "TwitterStreamConsumerMongoDB::TwitterStreamConsumerMongoDB.Function::FunctionHandler",
     "function-name"        : "TwitterStreamConsumerMongoDB",
-    "function-role"        : "arn:aws:iam::341490012980:role/lambda_exec_kinesis-consumer-function",
+    "function-role"        : "arn:aws:iam::680951908609:role/LambdaAdminRole",
     "tracing-mode"         : "PassThrough",
     "environment-variables" : ""
 }
